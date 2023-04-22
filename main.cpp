@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "H:\RiverGuiFrame\rvg.h"
+#include "H:\RiverGuiFrame\RiverGuiFrame\rvg.h"
 #include <river\defines.h>
+#include <Commctrl.h>
 #include <thread>
 using namespace std;
 
@@ -28,7 +29,7 @@ int f2(HWND win, HWND btn) {
 RvG::Window* x;
 RvG::Button* btn1;
 RvG::Button* btn2;
-HWND edit;
+RvG::Edit* edit;
 char baseStr[258];
 char newStr[258];
 
@@ -39,14 +40,15 @@ int main() {
 	btn1 = new RvG::Button(L"test1", 100, 100, 100, 100, x);
 	btn1->bindCommand(f1);
 	btn2 = new RvG::Button(L"test2", 100, 200, 100, 100, x);
-	edit = CreateWindow(L"Edit", L"RiverGuiFrame Button using Win32", WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
-		100, 300, 400, 200, x->hWnd, (HMENU)3, RvG::hInstance, nullptr);
-	ShowWindow(edit, 1);
-	SetWindowText(edit, L"LoremIpsum");
+	edit = new RvG::Edit(L"ab<ca>bc", 100, 300, 400, 200, x);
+	//wchar_t placeholder[25] = L"TEST";
+	//SendMessage(edit->hWnd, EM_SETCUEBANNER, TRUE, (LPARAM)placeholder);
 	auto f = [](HWND win, HWND btn)->int {
-		GetWindowTextA(edit, baseStr, 256);
-		replace(256, baseStr, newStr, "tesa", "xxx");
-		SetWindowTextA(edit, newStr);
+		//launchInstance("23w14a", "F:\\Minecraft", edit);
+		GetWindowTextA(edit->hWnd, baseStr, 256);
+		sp(baseStr, 256, "<", ">", newStr);
+		writeLog("test", "%s: %% %s", "HlHill", newStr);
+		SetWindowTextA(edit->hWnd, newStr);
 		return 0;
 	};
 	btn2->bindCommand(f);
