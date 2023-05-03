@@ -31,8 +31,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	char libDir[514];
 	char libSFName[514];
 	char tmpS[514];
-	char* tmpC;
-	char* tmpC2;
+	char* tmpC = NULL;
+	char* tmpC2 = NULL;
 	int tmpI;
 
 	// Libraries
@@ -47,8 +47,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 			mark = 1;
 		}
 		if (i["downloads"].isMember("classifiers")) {
-			versionLib = i["downloads"]["classifiers"];
-			mark = 1;
+			if (i["downloads"]["classifiers"].isMember("natives-windows")) {
+				versionLib = i["downloads"]["classifiers"]["natives-windows"];
+				mark = 1;
+			}
 		}
 		else if (mark == 0) {
 			if (i.isMember("name")) {
@@ -68,6 +70,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 				}
 				available[theVersion] = tmpS;
 				free(tmpC);
+				tmpC = NULL;
 			}
 			continue;
 		}
@@ -80,7 +83,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 							tmpI = 1;
 						}
 					}
-					else tmpI = 0;
+					else tmpI = 1;
 				}
 				if (strcmp(l["action"].asCString(), "disallow") == 0) {
 					if (l.isMember("os")) {
@@ -91,17 +94,15 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 					else tmpI = 0;
 				}
 			}
-			if (tmpI == 0) continue;
+			if (tmpI == 0) continue;	
 		}
-		strcpy(libDir, "libraries\\");
-		tmpC = (char*)malloc(strlen(versionLib["path"].asCString()) + 2);
-		strcpy(tmpC, versionLib["path"].asCString());
-		strcat(libDir, tmpC);
-		if (i.isMember("natives")) {
-			//* Extract Native Libraries
-		}
+		strcpyf(libDir, "libraries\\%s", versionLib["path"].asCString());
 		for (int i = 0; i < strlen(libDir); i++) {
 			if (libDir[i] == '/') libDir[i] = '\\';
+		}
+		if (i.isMember("natives")) {
+			//* Extract Native Libraries
+			continue;
 		}
 		available[theVersion] = libDir;
 	}
@@ -112,12 +113,11 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	available.empty();
 	char fvJar[512];
 	strcpy(fvJar, fvJson);
-	strcpy(fvJar + strlen(fvJson), ".jar\0");
+	strcpy(fvJar + strlen(fvJson) - 5, ".jar\0");
 	tmp.append(fvJar);
-	tmpC = (char*)malloc(20480);
-	join(tmp, tmpC, 20480, ";");
+	tmpC = (char*)malloc(5122);
+	join(tmp, tmpC, 5120, ";");
 	writeLog("launchInstance", tmpC);
-	SetWindowTextA(edit, tmpC);
 
 	// Get Launch Level
 
@@ -134,9 +134,9 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	libNameSp.empty();
 
 	Json::Value gameArg;
-	char* gameArgC = nullptr;
+	char* gameArgC = NULL;
 	Json::Value jvmArg;
-	char* jvmArgC = nullptr;
+	char* jvmArgC = NULL;
 	if (level == 0) {
 		gameArgC = (char*)malloc(strlen(versionInfo["minecraftArguments"].asCString())+2);
 		strcpy(gameArgC, versionInfo["minecraftArguments"].asCString());
@@ -145,6 +145,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 		jvmArg.append(tmpC);
 	}
 	if (level == 1) {
+		gameArg.clear();
+		gameArg = Json::arrayValue;
 		for (Json::Value i : versionInfo["arguments"]["game"]) {
 			if (i.isString()) gameArg.append(i);
 			else {
@@ -154,8 +156,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 				}
 			}
 		}
-		gameArgC = (char*)malloc(strlen(versionInfo["minecraftArguments"].asCString()) + 2);
-		join(gameArg, gameArgC, strlen(versionInfo["minecraftArguments"].asCString()), " ");
+		gameArgC = (char*)malloc(5122);
+		join(gameArg, gameArgC, 5120, " ");
 		jvmArg.clear();
 		for (Json::Value i : versionInfo["arguments"]["jvm"]) {
 			if (i.isString()) jvmArg.append(i);
@@ -163,44 +165,60 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 				tmp = i["value"];
 				tmpI = 0;
 				for (Json::Value j : i["rules"]) {
-					if (!j.isMember("os")) continue;
 					if (strcmp(j["action"].asCString(), "allow") == 0) {
 						if (j.isMember("os")) {
-							if (strcmp(j["os"]["name"].asCString(), "windows") == 0)
+							if (!j["os"].isMember("name")) continue;
+							if (strcmp(j["os"]["name"].asCString(), "windows") == 0) {
 								tmpI = 1;
+							}
 						}
-						else {
-							tmpI = 1;
-						}
+						else tmpI = 1;
 					}
-					if (strcmp(j["action"].asCString(), "disallow")) {
+					if (strcmp(j["action"].asCString(), "disallow") == 0) {
 						if (j.isMember("os")) {
-							if (strcmp(j["os"]["name"].asCString(), "windows")) {
+							if (strcmp(j["os"]["name"].asCString(), "windows") == 0) {
 								tmpI = 0;
 							}
 						}
-						else {
-							tmpI = 0;
+						else tmpI = 0;
+					}
+				}
+				if (tmpI == 0) continue;
+				if (tmp.isString()) {
+					if (find(tmp.asCString(), " ") != -1) {
+						strcpyf(tmpS, "\"%s\"", tmp.asCString());
+						jvmArg.append(tmpS);
+					}
+					else jvmArg.append(tmp);
+				}
+				else {
+					for (Json::Value j : tmp) {
+						if (find(j.asCString(), " ") != -1) {
+							strcpyf(tmpS, "\"%s\"", j.asCString());
+							jvmArg.append(tmpS);
 						}
+						else jvmArg.append(j);
 					}
 				}
 			}
 		}
 	}
-	jvmArgC = (char*)malloc(20480);
-	join(jvmArg, jvmArgC, 20480, " ");
-	strcpy(tmpS, "versions\\");
-	strcat(tmpS, versionId);
-	strcat(tmpS, "\\river_launch.bat");
+	jvmArgC = (char*)malloc(5122);
+	join(jvmArg, jvmArgC, 5120, " ");
+
+	// Get Javas //* Skipped
+
+	// Write into the BAT file
+		
+	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
 	FILE* output = fopen(tmpS, "w");
 	fprintf(output, "@echo off\ntitle Minecraft Log\ncd /d ");
 	fprintf(output, cwd);
 	fprintf(output, "\n");
-	//* Skipped Java
 	fprintf(output, "java -Dminecraft.client.jar=");
 	fprintf(output, "versions\\%s\\%s.jar", versionId, versionId);
-	if (!jvmArg.isMember("-Djava.library.path")) {
-		fprintf(output, " -Djava.library.path=%sversions\\%s\\riverNatives", cwd, versionId);
+	if (find(jvmArgC, "-Djava.library.path") == -1) {
+		fprintf(output, " -Djava.library.path=%sversions\\%s\\riverNatives\\", cwd, versionId);
 	}
 	char loggingTmp[256];
 	char loggingTmp2[256];
@@ -208,12 +226,49 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	if (versionInfo.isMember("logging")) {
 		if (versionInfo["logging"].isMember("client")) {
 			strcpy(loggingTmp, versionInfo["logging"]["client"]["argument"].asCString());
-			strcpy(loggingTmp3, cwd);
-
-			replace(256, loggingTmp, loggingTmp2, "$path", );
-			
-			fprintf(output, " %s");
+			strcpyf(loggingTmp3, "%sversions\\%s\\", cwd, versionId, versionInfo["logging"]["client"]["file"]["id"].asCString());
+			replace(256, loggingTmp, loggingTmp2, "${path}", loggingTmp3);
+			fprintf(output, " %s", loggingTmp2);
 		}
+	}
+	char* gameArgCReplaced = (char*)malloc(5122);
+	replace(5120, gameArgC, gameArgCReplaced, "${auth_player_name}", "Developer");
+	replace(5120, gameArgCReplaced, gameArgC, "${version_name}", versionId);
+	replace(5120, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
+	replace(5120, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
+	replace(5120, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
+	replace(5120, gameArgCReplaced, gameArgC, "${auth_uuid}", "${auth_uuid}"); //* Hey
+	replace(5120, gameArgC, gameArgCReplaced, "${auth_access_token}", "${auth_access_token}"); //* Hey
+	replace(5120, gameArgCReplaced, gameArgC, "${auth_session}", "${auth_session}"); //* Hey
+	replace(5120, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
+	replace(5120, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
+	replace(5120, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
+	replace(5120, gameArgCReplaced, gameArgC, "${resolution_width}", "1618"); //* Hey
+	replace(5120, gameArgC, gameArgCReplaced, "${resolution_height}", "1000"); //* Hey
+	replace(5120, gameArgCReplaced, gameArgC, "${natives_directory}", "Developer");
+	replace(5120, gameArgCReplaced, gameArgC, "${user_properties}", "{}");
+	replace(5120, gameArgC, gameArgCReplaced, "${client_id}", "00000000402b5328");
+	replace(5120, gameArgCReplaced, gameArgC, "${classpath_separator}", ";");
+	replace(5120, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
+	char* jvmArgCReplaced = (char*)malloc(5122);
+	replace(5120, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
+	free(jvmArgC);
+	fprintf(output, " %s %s %s", jvmArgCReplaced, versionInfo["mainClass"].asCString(), gameArgCReplaced);
+	if (find(gameArgC, "--width") == -1) {
+		fprintf(output, " --width %d --height %d", 1618, 1000);
+	}
+
+	// Clean
+
+	fclose(output);
+	free(tmpC);
+	free(gameArgC);
+	free(jvmArgCReplaced);
+	free(gameArgCReplaced);
+	char buf[258];
+	FILE* pipe = _popen(tmpS, "r");
+	while (fgets(buf, 256, pipe)) {
+		continue;
 	}
 	return 0;
 }

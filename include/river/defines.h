@@ -155,40 +155,38 @@ int replace(const int newSize, const char* baseStr, char* newStr, const char* fr
 	const int baseLen = strlen(baseStr);
 	const int fromLen = strlen(from);
 	const int toLen = strlen(to);
-	const int newLen = strlen(baseStr) + (toLen)*cnt + 1;
+	const int newLen = baseLen + (toLen)*cnt + 2;
 
-	char* tmp = (char*)malloc(newLen + 2);
+	char tmp[5120];
 	char tmp2[2];
-	memset(tmp, 0, newLen);
-	memset(newStr, 0, newSize);
+	strcpy(tmp, "\0");
+	strcpy(newStr, "\0");
 	int cur = 0, curLast = 0;
 	bool flag = 0;
-	for (i = 0; i < strlen(baseStr); i++) {
+	for (i = 0; i < baseLen; i++) {
 		flag = 0;
 		for (j = 0; j < strlen(from); j++) {
-			if ((i + j) > strlen(baseStr)) break;
+			if ((i + j) > baseLen) break;
 			if (DEBUG_MODE) writeLog("replace", "%d, %d, %c, %c, %s\t%s", i, j, baseStr[i + j], from[j], tmp, newStr);
 			tmp[cur++] = baseStr[i + j];
 			if (baseStr[i + j] != from[j]) {
 				tmp2[0] = baseStr[i];
 				tmp2[1] = 0;
 				strcat(newStr, tmp2);
-				memset(tmp, 0, newLen);
+				strcpy(tmp, "\0");
 				cur = 0;
 				break;
 			}
 			if (j == strlen(from) - 1) {
 				flag = 1;
 				strcat(newStr, to);
-				memset(tmp, 0, newLen);
+				strcpy(tmp, "\0");
 				i += j;
 				break;
 			}
 		}
 	}
 	if (DEBUG_MODE) writeLog("replace", "%s\t%s", tmp, newStr);
-
-	free(tmp);
 	return 0;
 }
 
@@ -246,12 +244,15 @@ int valueSplit(const char* str, const char* sep, Json::Value* output) {
 
 int join(Json::Value arr, char* output, int outputSize, const char* joiner) {
 	memset(output, 0, outputSize);
+	strcpy(output, "\0");
 	int flag = 0;
 	for (Json::Value i : arr) {
 		if (strlen(i.asCString()) == 0) continue;
 		if (flag) {
-			flag = 1;
 			strcat(output, joiner);
+		}
+		if (!flag) {
+			flag = 1;
 		}
 		strcat(output, i.asCString());
 	}
