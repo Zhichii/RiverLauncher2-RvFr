@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "H:\RiverGuiFrame\RiverGuiFrame\rvg.h"
-#include <river\defines.h>
+#include <river\launch.h>
 #include <Commctrl.h>
 #include <thread>
 using namespace std;
@@ -44,11 +44,13 @@ int main() {
 	//wchar_t placeholder[25] = L"TEST";
 	//SendMessage(edit->hWnd, EM_SETCUEBANNER, TRUE, (LPARAM)placeholder);
 	auto f = [](HWND win, HWND btn)->int {
-		//launchInstance("23w14a", "F:\\Minecraft", edit);
-		GetWindowTextA(edit->hWnd, baseStr, 256);
-		sp(baseStr, 256, "<", ">", newStr);
-		writeLog("test", "%s: %% %s", "HlHill", newStr);
-		SetWindowTextA(edit->hWnd, newStr);
+		launchInstance("23w14a", "F:\\Minecraft", edit->hWnd);
+		//GetWindowTextA(edit->hWnd, baseStr, 256);
+		//strcpy(newStr, baseStr);
+		//strcatf(newStr, "test,%d:%s! ", 1, "test");
+		//sp(baseStr, 256, "<", ">", newStr);
+		//writeLog("test", "%s: %% %s", "HlHill", newStr);
+		//SetWindowTextA(edit->hWnd, newStr);
 		return 0;
 	};
 	btn2->bindCommand(f);

@@ -278,6 +278,116 @@ int sp(char* str, int strSize, const char* a, const char* b, char* output) {
 	return 0;
 }
 
+// %% means "%". %d means "long long". %s means "char*". %c means "char". 
+char* strcpyf(char* dst, const char* srcFormat, ...) {
+	char tmp[258];
+	memset(dst, 0, 2);
+	va_list args;
+	va_start(args, srcFormat);
+	long long i;
+	int fori;
+	for (fori = 0; fori < strlen(srcFormat); fori++) {
+		if (srcFormat[fori] == '%') {
+			switch (srcFormat[fori + 1]) {
+			case '%': {
+				strcat(dst, "%%");
+				break;
+			}
+			case 's': {
+				i = va_arg(args, long long);
+				strcat(dst, (char*)i);
+				break;
+			}
+			case 'd': {
+				i = va_arg(args, int);
+				itoa(i, tmp, 10);
+				strcat(dst, tmp);
+				break;
+			}
+			case 'l': {
+				i = va_arg(args, long long);
+				ltoa(i, tmp, 10);
+				strcat(dst, tmp);
+				break;
+			}
+			case 'c': {
+				i = va_arg(args, char);
+				tmp[0] = i;
+				tmp[1] = 0;
+				strcat(dst, tmp);
+				break;
+			}
+			default: {
+				break;
+			}
+			}
+			fori++;
+		}
+		else {
+			tmp[0] = srcFormat[fori];
+			tmp[1] = 0;
+			strcat(dst, tmp);
+		}
+	}
+	va_end(args);
+	return dst;
+}
+
+// %% means "%". %d means "long long". %s means "char*". %c means "char". 
+char* strcatf(char* dst, const char* srcFormat, ...) {
+	char tmp[258];
+	//memset(dst, 0, 2);
+	va_list args;
+	va_start(args, srcFormat);
+	long long i;
+	int fori;
+	for (fori = 0; fori < strlen(srcFormat); fori++) {
+		if (srcFormat[fori] == '%') {
+			switch (srcFormat[fori + 1]) {
+			case '%': {
+				strcat(dst, "%%");
+				break;
+			}
+			case 's': {
+				i = va_arg(args, long long);
+				strcat(dst, (char*)i);
+				break;
+			}
+			case 'd': {
+				i = va_arg(args, int);
+				itoa(i, tmp, 10);
+				strcat(dst, tmp);
+				break;
+			}
+			case 'l': {
+				i = va_arg(args, long long);
+				ltoa(i, tmp, 10);
+				strcat(dst, tmp);
+				break;
+			}
+			case 'c': {
+				i = va_arg(args, char);
+				tmp[0] = i;
+				tmp[1] = 0;
+				strcat(dst, tmp);
+				break;
+			}
+			default: {
+				break;
+			}
+			}
+			fori++;
+		}
+		else {
+			tmp[0] = srcFormat[fori];
+			tmp[1] = 0;
+			strcat(dst, tmp);
+		}
+	}
+	va_end(args);
+	return dst;
+}
+
 int findFile(const char* fileEnding) {
 	return 0;
 }

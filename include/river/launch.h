@@ -193,11 +193,27 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	strcat(tmpS, versionId);
 	strcat(tmpS, "\\river_launch.bat");
 	FILE* output = fopen(tmpS, "w");
-	writeFile(output, "@echo off\ntitle Minecraft Log\ncd /d ");
-	writeFile(output, cwd);
-	writeFile(output, "\n");
+	fprintf(output, "@echo off\ntitle Minecraft Log\ncd /d ");
+	fprintf(output, cwd);
+	fprintf(output, "\n");
+	//* Skipped Java
+	fprintf(output, "java -Dminecraft.client.jar=");
+	fprintf(output, "versions\\%s\\%s.jar", versionId, versionId);
+	if (!jvmArg.isMember("-Djava.library.path")) {
+		fprintf(output, " -Djava.library.path=%sversions\\%s\\riverNatives", cwd, versionId);
+	}
+	char loggingTmp[256];
+	char loggingTmp2[256];
+	char loggingTmp3[256];
+	if (versionInfo.isMember("logging")) {
+		if (versionInfo["logging"].isMember("client")) {
+			strcpy(loggingTmp, versionInfo["logging"]["client"]["argument"].asCString());
+			strcpy(loggingTmp3, cwd);
 
-	// Get Javas
-
+			replace(256, loggingTmp, loggingTmp2, "$path", );
+			
+			fprintf(output, " %s");
+		}
+	}
 	return 0;
 }
