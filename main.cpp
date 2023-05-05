@@ -27,25 +27,36 @@ int f2(HWND win, HWND btn) {
 }
 
 RvG::Window* x;
+RvG::Container* ctn1;
+RvG::Container* ctn2;
 RvG::Button* btn1;
 RvG::Button* btn2;
+RvG::Button* btnS1;
+RvG::Button* btnS2;
 RvG::Edit* edit;
 char baseStr[258];
 char newStr[258];
 
 int main() {
 	RvG::start();
-	const wchar_t className[255] = L"test";
-	x = new RvG::Window(className, L"RiverLauncher2");
-	btn1 = new RvG::Button(L"Test Button", 100, 100, 100, 100, x);
+	x = new RvG::Window(L"RiverLauncher2");
+	btnS1 = new RvG::Button(L"Page Test", 0, 0, 100, 100, x);
+	btnS2 = new RvG::Button(L"Page Launch", 0, 100, 100, 100, x);
+
+	// Container 1
+
+	ctn1 = new RvG::Container(125, 25, x);
+	btn1 = new RvG::Button(L"Test Button", 0, 0, 100, 100, ctn1);
 	btn1->bindCommand(f1);
-	btn2 = new RvG::Button(L"Launch", 100, 200, 100, 100, x);
-	edit = new RvG::Edit(L"F:\\Minecraft\r\n1.9", 100, 300, 400, 200, x);
-	//wchar_t placeholder[25] = L"TEST";
-	//SendMessage(edit->hWnd, EM_SETCUEBANNER, TRUE, (LPARAM)placeholder);
+
+	// Container 2
+
+	ctn2 = new RvG::Container(125, 25, x);
+	btn2 = new RvG::Button(L"Launch", 0, 0, 100, 100, ctn2);
+	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w16a-Fabric", 0, 100, 400, 200, ctn2);
 	auto f = [](HWND win, HWND btn)->int {
 		GetWindowTextA(edit->hWnd, baseStr, 256);
-		for (int i = 0; i < 256; i ++) {
+		for (int i = 0; i < 256; i++) {
 			if (baseStr[i] == '\r') {
 				baseStr[i] = 0;
 				strcpy(newStr, baseStr + i + 2);
@@ -56,6 +67,19 @@ int main() {
 		return 0;
 	};
 	btn2->bindCommand(f);
+
+	btnS1->bindCommand([](HWND win, HWND btn)->int {
+		ctn2->hide();
+		ctn1->show();
+		return 0;
+	});
+	btnS2->bindCommand([](HWND win, HWND btn)->int {
+		ctn1->hide();
+		ctn2->show();
+		return 0;
+	});
+
+	ctn2->hide();
 	x->keepResponding();
 	RvG::end();
 	return 0;

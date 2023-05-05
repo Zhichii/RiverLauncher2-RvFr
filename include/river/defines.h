@@ -37,7 +37,7 @@ int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to =
 	if (from < 0) from = strlen(baseStr) + from;
 	if (to < 0) to = strlen(baseStr) + to;
 	if (step == 0) step = 1;
-	memset(newStr, 0, newSize);
+	strcpy(newStr, "\0");
 
 	int cur = 0;
 	for (int i = from; (from < to) ? (i < to) : (i > to); i += step) {
@@ -205,8 +205,8 @@ int valueSplit(const char* str, const char* sep, Json::Value* output) {
 	char* tmp = (char*)malloc(strLen + 2);
 	char tmp2[2];
 	char* tmp3 = (char*)malloc(strLen + 2);
-	memset(tmp, 0, strLen);
-	memset(tmp3, 0, strLen);
+	strcpy(tmp, "\0");
+	strcpy(tmp3, "\0");
 
 	int cur = 0, curLast = 0;
 	bool flag = 0;
@@ -220,15 +220,15 @@ int valueSplit(const char* str, const char* sep, Json::Value* output) {
 				tmp2[0] = str[i];
 				tmp2[1] = 0;
 				strcat(tmp3, tmp2);
-				memset(tmp, 0, strLen);
+				strcpy(tmp, "\0");
 				cur = 0;
 				break;
 			}
 			if (j == strlen(sep) - 1) {
 				flag = 1;
 				output->append(tmp3);
-				memset(tmp, 0, strLen);
-				memset(tmp3, 0, strLen);
+				strcpy(tmp, "\0");
+				strcpy(tmp3, "\0");
 				i += j;
 				break;
 			}
@@ -243,7 +243,6 @@ int valueSplit(const char* str, const char* sep, Json::Value* output) {
 }
 
 int join(Json::Value arr, char* output, int outputSize, const char* joiner) {
-	memset(output, 0, outputSize);
 	strcpy(output, "\0");
 	int flag = 0;
 	for (Json::Value i : arr) {
@@ -265,7 +264,7 @@ int writeFile(FILE* stream, const char* str) {
 }
 
 int sp(char* str, int strSize, const char* a, const char* b, char* output) {
-	memset(output, 0, strSize);
+	strcpy(output, "\0");
 	int aPos = find(str, a);
 	if (DEBUG_MODE) writeLog("sp", "%d", aPos);
 	if (aPos == -1) return 1;
@@ -282,7 +281,7 @@ int sp(char* str, int strSize, const char* a, const char* b, char* output) {
 // %% means "%". %d means "long long". %s means "char*". %c means "char". 
 char* strcpyf(char* dst, const char* srcFormat, ...) {
 	char tmp[258];
-	memset(dst, 0, 2);
+	strcpy(dst, "\0");
 	va_list args;
 	va_start(args, srcFormat);
 	long long i;
@@ -337,7 +336,6 @@ char* strcpyf(char* dst, const char* srcFormat, ...) {
 // %% means "%". %d means "long long". %s means "char*". %c means "char". 
 char* strcatf(char* dst, const char* srcFormat, ...) {
 	char tmp[258];
-	//memset(dst, 0, 2);
 	va_list args;
 	va_start(args, srcFormat);
 	long long i;

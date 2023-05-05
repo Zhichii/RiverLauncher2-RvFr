@@ -29,7 +29,6 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	Json::Value versionLib;
 	Json::Value libNameSp;
 	char libDir[514];
-	char libSFName[514];
 	char tmpS[514];
 	char* tmpC = NULL;
 	char* tmpC2 = NULL;
@@ -55,22 +54,20 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 		else if (mark == 0) {
 			if (i.isMember("name")) {
 				valueSplit(i["name"].asCString(), ":", &libNameSp);
-				tmpC = (char*)malloc(strlen(libNameSp.asCString())+2);
-				strcpy(tmpC, libNameSp.asCString());
+				tmpC = (char*)malloc(strlen(libNameSp[0].asCString()) + 2);
+				strcpy(tmpC, libNameSp[0].asCString());
+				for (int i = 0; i < strlen(tmpC); i++) {
+					if (tmpC[i] == '.') tmpC[i] = '\\';
+				}
 				libNameSp[0] = tmpC;
+				free(tmpC);
+				tmpC = NULL;
 				join(libNameSp, libDir, 512, "\\");
-				libNameSp.resize(libNameSp.size() - 2);
-				join(libNameSp, libSFName, 512, "-");
-				strcat(libSFName, ".jar");
-				memset(tmpS, 0, 512);
-				strcat(tmpS, "libraries\\");
-				strcat(tmpS, libDir);
+				strcpyf(tmpS, "libraries\\%s\\%s-%s.jar", libDir, libNameSp[1].asCString(), libNameSp[2].asCString());
 				for (int i = 0; i < strlen(libDir); i++) {
 					if (libDir[i] == '/') libDir[i] = '\\';
 				}
 				available[theVersion] = tmpS;
-				free(tmpC);
-				tmpC = NULL;
 			}
 			continue;
 		}
@@ -115,8 +112,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	strcpy(fvJar, fvJson);
 	strcpy(fvJar + strlen(fvJson) - 5, ".jar\0");
 	tmp.append(fvJar);
-	tmpC = (char*)malloc(5122);
-	join(tmp, tmpC, 5120, ";");
+	tmpC = (char*)malloc(6402);
+	join(tmp, tmpC, 6400, ";");
 	writeLog("launchInstance", tmpC);
 
 	// Get Launch Level
@@ -148,19 +145,35 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 		gameArg.clear();
 		gameArg = Json::arrayValue;
 		for (Json::Value i : versionInfo["arguments"]["game"]) {
-			if (i.isString()) gameArg.append(i);
+			if (i.isString()) {
+				if (find(i.asCString(), " ") != -1) {
+					strcpyf(tmpS, "\"%s\"", i.asCString());
+					gameArg.append(tmpS);
+				}
+				else gameArg.append(i);
+			}
 			else {
 				tmp = i["value"];
 				for (Json::Value j : tmp) {
-					gameArg.append(j);
+					if (find(j.asCString(), " ") != -1) {
+						strcpyf(tmpS, "\"%s\"", j.asCString());
+						gameArg.append(tmpS);
+					}
+					else gameArg.append(j);
 				}
 			}
 		}
-		gameArgC = (char*)malloc(5122);
-		join(gameArg, gameArgC, 5120, " ");
+		gameArgC = (char*)malloc(6402);
+		join(gameArg, gameArgC, 6400, " ");
 		jvmArg.clear();
 		for (Json::Value i : versionInfo["arguments"]["jvm"]) {
-			if (i.isString()) jvmArg.append(i);
+			if (i.isString()) {
+				if (find(i.asCString(), " ") != -1) {
+					strcpyf(tmpS, "\"%s\"", i.asCString());
+					jvmArg.append(tmpS);
+				}
+				else jvmArg.append(i);
+			}
 			else {
 				tmp = i["value"];
 				tmpI = 0;
@@ -203,8 +216,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 			}
 		}
 	}
-	jvmArgC = (char*)malloc(5122);
-	join(jvmArg, jvmArgC, 5120, " ");
+	jvmArgC = (char*)malloc(6402);
+	join(jvmArg, jvmArgC, 6400, " ");
 
 	// Get Javas //* Skipped
 
@@ -218,7 +231,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	fprintf(output, "java -Dminecraft.client.jar=");
 	fprintf(output, "versions\\%s\\%s.jar", versionId, versionId);
 	if (find(jvmArgC, "-Djava.library.path") == -1) {
-		fprintf(output, " -Djava.library.path=%sversions\\%s\\riverNatives\\", cwd, versionId);
+		fprintf(output, " -Djava.library.path=%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
 	}
 	char loggingTmp[256];
 	char loggingTmp2[256];
@@ -231,27 +244,33 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 			fprintf(output, " %s", loggingTmp2);
 		}
 	}
-	char* gameArgCReplaced = (char*)malloc(5122);
-	replace(5120, gameArgC, gameArgCReplaced, "${auth_player_name}", "Developer");
-	replace(5120, gameArgCReplaced, gameArgC, "${version_name}", versionId);
-	replace(5120, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
-	replace(5120, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
-	replace(5120, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
-	replace(5120, gameArgCReplaced, gameArgC, "${auth_uuid}", "${auth_uuid}"); //* Hey
-	replace(5120, gameArgC, gameArgCReplaced, "${auth_access_token}", "${auth_access_token}"); //* Hey
-	replace(5120, gameArgCReplaced, gameArgC, "${auth_session}", "${auth_session}"); //* Hey
-	replace(5120, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
-	replace(5120, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
-	replace(5120, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
-	replace(5120, gameArgCReplaced, gameArgC, "${resolution_width}", "1618"); //* Hey
-	replace(5120, gameArgC, gameArgCReplaced, "${resolution_height}", "1000"); //* Hey
-	replace(5120, gameArgCReplaced, gameArgC, "${natives_directory}", "Developer");
-	replace(5120, gameArgCReplaced, gameArgC, "${user_properties}", "{}");
-	replace(5120, gameArgC, gameArgCReplaced, "${client_id}", "00000000402b5328");
-	replace(5120, gameArgCReplaced, gameArgC, "${classpath_separator}", ";");
-	replace(5120, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
-	char* jvmArgCReplaced = (char*)malloc(5122);
-	replace(5120, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
+	char* gameArgCReplaced = (char*)malloc(6402);
+	if (find(gameArgC, " --tweakClass optifine.OptiFineForgeTweaker") != -1) {
+		replace(6400, gameArgC, gameArgCReplaced, " --tweakClass optifine.OptiFineForgeTweaker", "");
+		strcpyf(gameArgC, "%s --tweakClass optifine.OptiFineForgeTweaker", gameArgCReplaced);
+	}
+	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", "HillQiu");
+	replace(6400, gameArgCReplaced, gameArgC, "${version_name}", versionId);
+	replace(6400, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
+	replace(6400, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
+	replace(6400, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
+	replace(6400, gameArgCReplaced, gameArgC, "${auth_uuid}", "${auth_uuid}"); //* Hey
+	replace(6400, gameArgC, gameArgCReplaced, "${auth_access_token}", "${auth_access_token}"); //* Hey
+	replace(6400, gameArgCReplaced, gameArgC, "${auth_session}", "${auth_session}"); //* Hey
+	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
+	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
+	replace(6400, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
+	replace(6400, gameArgCReplaced, gameArgC, "${resolution_width}", "1618"); //* Hey
+	replace(6400, gameArgC, gameArgCReplaced, "${resolution_height}", "1000"); //* Hey
+	char latest[256];
+	strcpyf(latest, "versions\\%s\\%s-natives\\", versionId, versionId);
+	replace(6400, gameArgCReplaced, gameArgC, "${natives_directory}", latest);
+	replace(6400, gameArgCReplaced, gameArgC, "${user_properties}", "{}");
+	replace(6400, gameArgC, gameArgCReplaced, "${client_id}", "00000000402b5328");
+	replace(6400, gameArgCReplaced, gameArgC, "${classpath_separator}", ";");
+	replace(6400, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
+	char* jvmArgCReplaced = (char*)malloc(6402);
+	replace(6400, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
 	free(jvmArgC);
 	fprintf(output, " %s %s %s", jvmArgCReplaced, versionInfo["mainClass"].asCString(), gameArgCReplaced);
 	if (find(gameArgC, "--width") == -1) {
@@ -268,7 +287,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	char buf[258];
 	FILE* pipe = _popen(tmpS, "r");
 	while (fgets(buf, 256, pipe)) {
-		continue;
+		printf(buf);
 	}
 	return 0;
 }
