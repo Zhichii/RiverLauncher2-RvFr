@@ -7,7 +7,6 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	struct _stat fileStat;
 	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
 	else return 1;
-
 	if (accounts.size() == 0) {
 		MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
 	}
@@ -39,6 +38,11 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	char* tmpC = NULL;
 	char* tmpC2 = NULL;
 	int tmpI;
+	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
+	FILE* output = fopen(tmpS, "w");
+	if (output == nullptr) {
+		return 1;
+	}
 
 	// Libraries
 
@@ -230,7 +234,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	// Write into the BAT file
 		
 	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
-	FILE* output = fopen(tmpS, "w");
+
 	fprintf(output, "@echo off\ntitle Minecraft Log\ncd /d ");
 	fprintf(output, cwd);
 	fprintf(output, "\n");

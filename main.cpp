@@ -49,7 +49,7 @@ int main() {
 
 	ctn2 = new RvG::Container(125, 25, x);
 	btn2 = new RvG::Button(L"Launch", 0, 0, 100, 100, ctn2);
-	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w16a-Fabric", 0, 100, 400, 200, ctn2);
+	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w18a", 0, 100, 400, 200, ctn2);
 	edit2 = new RvG::Edit(L"OL", 0, 200, 400, 200, ctn2);
 	auto f = [](HWND win, HWND btn)->int {
 		GetWindowTextA(edit->hWnd, baseStr, 256);

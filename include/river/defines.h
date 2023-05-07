@@ -50,6 +50,7 @@ int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to =
 
 // %% means "%". %d means "long long". %s means "char*". %c means "char". 
 int writeLog(const char* logger, const char* format, ...) {
+	if (programmeLog == nullptr) return 1;
 	char str[256];
 	strcpy(str, "[%d, %s] ");
 	va_list args;
@@ -259,6 +260,7 @@ int join(Json::Value arr, char* output, int outputSize, const char* joiner) {
 }
 
 int writeFile(FILE* stream, const char* str) {
+	if (stream == nullptr) return 1;
 	fwrite(str, 1, strlen(str), stream);
 	return 0;
 }
