@@ -21,11 +21,6 @@ int f1(HWND win, HWND btn) {
 	return 0;
 }
 
-int f2(HWND win, HWND btn) {
-	MessageBox(win, L"Please click the other button not this! ", L"Hint", MB_OK | MB_ICONINFORMATION);
-	return 0;
-}
-
 RvG::Window* x;
 RvG::Container* ctn1;
 RvG::Container* ctn2;
@@ -34,6 +29,7 @@ RvG::Button* btn2;
 RvG::Button* btnS1;
 RvG::Button* btnS2;
 RvG::Edit* edit;
+RvG::Edit* edit2;
 char baseStr[258];
 char newStr[258];
 
@@ -54,6 +50,7 @@ int main() {
 	ctn2 = new RvG::Container(125, 25, x);
 	btn2 = new RvG::Button(L"Launch", 0, 0, 100, 100, ctn2);
 	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w16a-Fabric", 0, 100, 400, 200, ctn2);
+	edit2 = new RvG::Edit(L"OL", 0, 200, 400, 200, ctn2);
 	auto f = [](HWND win, HWND btn)->int {
 		GetWindowTextA(edit->hWnd, baseStr, 256);
 		for (int i = 0; i < 256; i++) {
@@ -63,7 +60,9 @@ int main() {
 				break;
 			}
 		}
-		launchInstance(newStr, baseStr, edit->hWnd);
+		if (launchInstance(newStr, baseStr, edit->hWnd, edit2, x) == 1) {
+			MessageBox(win, L"Uncorrect Parameters! Check the folder and the instance exists! ", L"Hint", MB_OK | MB_ICONINFORMATION);
+		}
 		return 0;
 	};
 	btn2->bindCommand(f);

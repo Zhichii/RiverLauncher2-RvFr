@@ -1,8 +1,12 @@
 #include <river/defines.h>
 
-int launchInstance(const char* versionId, const char* dir, HWND edit) {
+int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit* edi, RvG::Window* x) {
 	
 	// Prepare
+
+	struct _stat fileStat;
+	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
+	else return 1;
 
 	if (accounts.size() == 0) {
 		MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
@@ -17,6 +21,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	strcat(fvJson, "\\");
 	strcat(fvJson, versionId);
 	strcat(fvJson, ".json");
+	if ((_stat(fvJson, &fileStat) == 0)) {}
+	else return 1;
 
 	ifstream file(fvJson);
 	Json::Value versionInfo;
@@ -284,10 +290,54 @@ int launchInstance(const char* versionId, const char* dir, HWND edit) {
 	free(gameArgC);
 	free(jvmArgCReplaced);
 	free(gameArgCReplaced);
-	char buf[258];
-	FILE* pipe = _popen(tmpS, "r");
-	while (fgets(buf, 256, pipe)) {
-		printf(buf);
-	}
+	char tmpS2[514];
+	strcpyf(tmpS2, "cmd /k %s", tmpS);
+	int f = 0;
+	thread thr([=]() {
+		SECURITY_ATTRIBUTES sa;
+		HANDLE hRead, hWrite;
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.lpSecurityDescriptor = NULL;
+		sa.bInheritHandle = TRUE;
+
+		if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+			DWORD ret = GetLastError();
+			return ret ? ret : -1;
+		}
+
+		STARTUPINFOA si;
+		PROCESS_INFORMATION pi;
+		ZeroMemory(&si, sizeof(STARTUPINFO));
+
+		si.cb = sizeof(STARTUPINFO);
+		GetStartupInfoA(&si);
+		si.hStdError = hWrite;
+		si.hStdOutput = hWrite;
+		si.wShowWindow = SW_HIDE;
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+
+		if (!CreateProcessA(NULL, (char*)tmpS, NULL, NULL, TRUE, NULL,
+			NULL, NULL, &si, &pi)) {
+			DWORD ret = GetLastError();
+			CloseHandle(hRead);
+			CloseHandle(hWrite);
+			return ret ? ret : -1;
+		}
+
+		CloseHandle(hWrite);
+		char buf[4098];
+		DWORD bytesRead;
+		while (ReadFile(hRead, buf, 4096, &bytesRead, NULL)) {
+			SetWindowTextA(edi->hWnd, buf);
+			Sleep(100);
+		}
+
+		DWORD exitCode = 0;
+		GetExitCodeProcess(pi.hProcess, &exitCode);
+		CloseHandle(hRead);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	});
+	thr.detach();
 	return 0;
 }
