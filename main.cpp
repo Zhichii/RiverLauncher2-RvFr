@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include "H:\RiverGuiFrame\RiverGuiFrame\rvg.h"
 #include <river\launch.h>
 #include <Commctrl.h>
+#include "resource.h"
 #include <thread>
 using namespace std;
 
@@ -22,12 +22,15 @@ int f1(HWND win, HWND btn) {
 }
 
 RvG::Window* x;
-RvG::Container* ctn1;
-RvG::Container* ctn2;
+RvG::Container* curPage;
+RvG::Button* swiMinecraft;
+RvG::Container* pageMinecraft;
+RvG::Button* swiMinecraftDownloads;
+RvG::Container* pageMinecraftDownloads;
+RvG::Button* swiAccounts;
+RvG::Container* pageAccounts;
 RvG::Button* btn1;
 RvG::Button* btn2;
-RvG::Button* btnS1;
-RvG::Button* btnS2;
 RvG::Edit* edit;
 RvG::Edit* edit2;
 char baseStr[258];
@@ -36,21 +39,17 @@ char newStr[258];
 int main() {
 	RvG::start();
 	x = new RvG::Window(L"RiverLauncher2");
-	btnS1 = new RvG::Button(L"Page Test", 0, 0, 100, 100, x);
-	btnS2 = new RvG::Button(L"Page Launch", 0, 100, 100, 100, x);
+	swiMinecraft = new RvG::Button(L"Page Launch", 0, 0, 100, 100, x);
+	swiAccounts = new RvG::Button(L"Page Accounts", 0, 100, 100, 100, x);
 
-	// Container 1
 
-	ctn1 = new RvG::Container(125, 25, x);
-	btn1 = new RvG::Button(L"Test Button", 0, 0, 100, 100, ctn1);
-	btn1->bindCommand(f1);
 
-	// Container 2
+	// Page Minecraft
 
-	ctn2 = new RvG::Container(125, 25, x);
-	btn2 = new RvG::Button(L"Launch", 0, 0, 100, 100, ctn2);
-	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w18a", 0, 100, 400, 200, ctn2);
-	edit2 = new RvG::Edit(L"OL", 0, 200, 400, 200, ctn2);
+	pageMinecraft = new RvG::Container(125, 25, x);
+	btn2 = new RvG::Button(L"Launch", 0, 0, 100, 100, pageMinecraft);
+	edit = new RvG::Edit(L"F:\\Minecraft\r\n23w18a", 0, 100, 400, 200, pageMinecraft);
+	edit2 = new RvG::Edit(L"OL", 400, 100, 600, 400, pageMinecraft);
 	auto f = [](HWND win, HWND btn)->int {
 		GetWindowTextA(edit->hWnd, baseStr, 256);
 		for (int i = 0; i < 256; i++) {
@@ -67,18 +66,29 @@ int main() {
 	};
 	btn2->bindCommand(f);
 
-	btnS1->bindCommand([](HWND win, HWND btn)->int {
-		ctn2->hide();
-		ctn1->show();
+	// Container 1
+
+	pageAccounts = new RvG::Container(125, 25, x);
+	btn1 = new RvG::Button(L"Test Button", 0, 0, 100, 100, pageAccounts);
+	btn1->bindCommand(f1);
+
+
+
+	swiMinecraft->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		curPage = pageMinecraft;
+		curPage->show();
 		return 0;
-	});
-	btnS2->bindCommand([](HWND win, HWND btn)->int {
-		ctn1->hide();
-		ctn2->show();
+		});
+	swiAccounts->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		curPage = pageAccounts;
+		curPage->show();
 		return 0;
 	});
 
-	ctn2->hide();
+	curPage = pageMinecraft;
+	pageAccounts->hide();
 	x->keepResponding();
 	RvG::end();
 	return 0;

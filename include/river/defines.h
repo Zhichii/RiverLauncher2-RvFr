@@ -24,12 +24,12 @@ char name[15] = "RiverLauncher2";
 Json::Reader reader;
 Json::Value accounts;
 FILE* programmeLog = fopen(".river_log.txt", "w");
-int curPage = 0;
+
 /*
- * 0: Minecraft [Download]
- * 1: Accounts [Login to accounts]
- * 2: Settings
- * 3: Connect [Create new rooms]
+ * Minecraft [Download]
+ * Accounts [Login to accounts]
+ * Settings
+ * Connect [Create new rooms]
  */
 
 int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to = 0, int step = 1) {

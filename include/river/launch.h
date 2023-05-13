@@ -333,7 +333,6 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 		DWORD bytesRead;
 		while (ReadFile(hRead, buf, 4096, &bytesRead, NULL)) {
 			SetWindowTextA(edi->hWnd, buf);
-			Sleep(100);
 		}
 
 		DWORD exitCode = 0;
