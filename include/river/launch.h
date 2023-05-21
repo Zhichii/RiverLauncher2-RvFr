@@ -1,3 +1,5 @@
+#pragma once
+
 #include <river/defines.h>
 
 int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit* edi, RvG::Window* x) {
@@ -7,9 +9,6 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	struct _stat fileStat;
 	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
 	else return 1;
-	if (accounts.size() == 0) {
-		MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
-	}
 	char cwd[512];
 	strcpy(cwd, dir);
 	strcat(cwd, "\\");
@@ -22,6 +21,9 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	strcat(fvJson, ".json");
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
+	if (accounts.size() == 0) {
+		MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
+	}
 
 	ifstream file(fvJson);
 	Json::Value versionInfo;
@@ -39,7 +41,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	char* tmpC2 = NULL;
 	int tmpI;
 	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
-	FILE* output = fopen(tmpS, "w");
+	char output[6400];
 	if (output == nullptr) {
 		return 1;
 	}
@@ -235,13 +237,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 		
 	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
 
-	fprintf(output, "@echo off\ntitle Minecraft Log\ncd /d ");
-	fprintf(output, cwd);
-	fprintf(output, "\n");
-	fprintf(output, "java -Dminecraft.client.jar=");
-	fprintf(output, "versions\\%s\\%s.jar", versionId, versionId);
+	strcpy(output, "java -Dminecraft.client.jar=");
+	strcatf(output, "versions\\%s\\%s.jar", versionId, versionId);
 	if (find(jvmArgC, "-Djava.library.path") == -1) {
-		fprintf(output, " -Djava.library.path=%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
+		strcatf(output, " -Djava.library.path=%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
 	}
 	char loggingTmp[256];
 	char loggingTmp2[256];
@@ -251,7 +250,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 			strcpy(loggingTmp, versionInfo["logging"]["client"]["argument"].asCString());
 			strcpyf(loggingTmp3, "%sversions\\%s\\", cwd, versionId, versionInfo["logging"]["client"]["file"]["id"].asCString());
 			replace(256, loggingTmp, loggingTmp2, "${path}", loggingTmp3);
-			fprintf(output, " %s", loggingTmp2);
+			strcatf(output, " %s", loggingTmp2);
 		}
 	}
 	char* gameArgCReplaced = (char*)malloc(6402);
@@ -282,59 +281,56 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	char* jvmArgCReplaced = (char*)malloc(6402);
 	replace(6400, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
 	free(jvmArgC);
-	fprintf(output, " %s %s %s", jvmArgCReplaced, versionInfo["mainClass"].asCString(), gameArgCReplaced);
+	strcatf(output, " %s %s %s", jvmArgCReplaced, versionInfo["mainClass"].asCString(), gameArgCReplaced);
 	if (find(gameArgC, "--width") == -1) {
-		fprintf(output, " --width %d --height %d", 1618, 1000);
+		strcatf(output, " --width %d --height %d", 1618, 1000);
 	}
 
 	// Clean
 
-	fclose(output);
 	free(tmpC);
 	free(gameArgC);
 	free(jvmArgCReplaced);
 	free(gameArgCReplaced);
-	char tmpS2[514];
-	strcpyf(tmpS2, "cmd /k %s", tmpS);
 	int f = 0;
-	thread thr([=]() {
-		SECURITY_ATTRIBUTES sa;
-		HANDLE hRead, hWrite;
-		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-		sa.lpSecurityDescriptor = NULL;
-		sa.bInheritHandle = TRUE;
 
-		if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
-			DWORD ret = GetLastError();
-			return ret ? ret : -1;
-		}
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.lpSecurityDescriptor = NULL;
+	sa.bInheritHandle = TRUE;
 
-		STARTUPINFOA si;
-		PROCESS_INFORMATION pi;
-		ZeroMemory(&si, sizeof(STARTUPINFO));
+	if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+		DWORD ret = GetLastError();
+		return ret ? ret : -1;
+	}
 
-		si.cb = sizeof(STARTUPINFO);
-		GetStartupInfoA(&si);
-		si.hStdError = hWrite;
-		si.hStdOutput = hWrite;
-		si.wShowWindow = SW_HIDE;
-		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+	ZeroMemory(&si, sizeof(STARTUPINFO));
 
-		if (!CreateProcessA(NULL, (char*)tmpS, NULL, NULL, TRUE, NULL,
-			NULL, NULL, &si, &pi)) {
-			DWORD ret = GetLastError();
-			CloseHandle(hRead);
-			CloseHandle(hWrite);
-			return ret ? ret : -1;
-		}
+	si.cb = sizeof(STARTUPINFO);
+	GetStartupInfoA(&si);
+	si.hStdError = hWrite;
+	si.hStdOutput = hWrite;
+	si.wShowWindow = SW_HIDE;
+	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 
+	if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
+		NULL, cwd, &si, &pi)) {
+		DWORD ret = GetLastError();
+		CloseHandle(hRead);
 		CloseHandle(hWrite);
-		char buf[4098];
-		DWORD bytesRead;
-		while (ReadFile(hRead, buf, 4096, &bytesRead, NULL)) {
+		return ret ? ret : -1;
+	}
+
+	CloseHandle(hWrite);
+	char buf[4098];
+	DWORD bytesRead;
+	thread thr([=]() {
+		while (ReadFile(hRead, (char*)buf, 4096, (LPDWORD) &bytesRead, NULL)) {
 			SetWindowTextA(edi->hWnd, buf);
 		}
-
+		char temp[4096];
+		strcpyf(temp, "Process ended with \"%s\"! ", buf);
+		SetWindowTextA(edi->hWnd, temp);
 		DWORD exitCode = 0;
 		GetExitCodeProcess(pi.hProcess, &exitCode);
 		CloseHandle(hRead);

@@ -1,8 +1,7 @@
+#pragma once
+
 #include <stdio.h>
-#include <json/json_reader.cpp>
-#include <json/json_writer.cpp>
-#include <json/json_value.cpp>
-#include <json/json.h>
+#include <filesystem>
 #include <urlmon.h>
 #include <ctime>
 #include <cstring>
@@ -15,6 +14,10 @@
 #include <thread>
 #include <sys/stat.h>
 #include <cstdarg>
+#include <json/json_reader.cpp>
+#include <json/json_writer.cpp>
+#include <json/json_value.cpp>
+#include <json/json.h>
 #define INT_MAX 2147483647
 #define ALLOC 4096
 #define DEBUG_MODE 0
@@ -24,6 +27,12 @@ char name[15] = "RiverLauncher2";
 Json::Reader reader;
 Json::Value accounts;
 FILE* programmeLog = fopen(".river_log.txt", "w");
+HKEY hData;
+
+
+HANDLE hRead, hWrite;
+STARTUPINFOA si;
+PROCESS_INFORMATION pi;
 
 /*
  * Minecraft [Download]
