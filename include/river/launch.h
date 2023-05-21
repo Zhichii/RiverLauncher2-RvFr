@@ -40,7 +40,6 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	char* tmpC = NULL;
 	char* tmpC2 = NULL;
 	int tmpI;
-	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
 	char output[6400];
 	if (output == nullptr) {
 		return 1;
@@ -110,7 +109,30 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 			if (libDir[i] == '/') libDir[i] = '\\';
 		}
 		if (i.isMember("natives")) {
-			//* Extract Native Libraries
+			char nativeTmp[514] = {};
+			strcpyf(nativeTmp, "%slibraries\\%s", cwd, versionLib["path"].asCString());
+			for (int i = 0; i < 512; i++) {
+				if (nativeTmp[i] == 0) break;
+				if (nativeTmp[i] == '/') nativeTmp[i] = '\\';
+			}
+			wchar_t nativeTmpW[514] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 512);
+			HZIP hZip = OpenZip(nativeTmpW, NULL);
+			ZIPENTRY ze;
+			GetZipItem(hZip, -1, &ze);
+			int nums = ze.index;
+			char nativeLatestA[514] = {};
+			strcpyf(nativeLatestA, "%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
+			wchar_t nativeLatestW[514] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 512);
+			SetUnzipBaseDir(hZip, nativeLatestW);
+			for (int i = 0; i < nums; i++) {
+				GetZipItem(hZip, i, &ze);
+				int len = lstrlenW(ze.name);
+				if (ze.name[len - 1] == L'l' && ze.name[len - 2] == L'l' && ze.name[len - 3] == L'd' && ze.name[len - 4] == L'.')
+					UnzipItem(hZip, i, ze.name);
+			}
+			CloseZip(hZip);
 			continue;
 		}
 		available[theVersion] = libDir;
@@ -233,9 +255,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 
 	// Get Javas //* Skipped
 
-	// Write into the BAT file
-		
-	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
+	// Write into output
 
 	strcpy(output, "java -Dminecraft.client.jar=");
 	strcatf(output, "versions\\%s\\%s.jar", versionId, versionId);
@@ -258,7 +278,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 		replace(6400, gameArgC, gameArgCReplaced, " --tweakClass optifine.OptiFineForgeTweaker", "");
 		strcpyf(gameArgC, "%s --tweakClass optifine.OptiFineForgeTweaker", gameArgCReplaced);
 	}
-	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", "HillQiu");
+	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", "Player");
 	replace(6400, gameArgCReplaced, gameArgC, "${version_name}", versionId);
 	replace(6400, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
 	replace(6400, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
@@ -269,8 +289,12 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
 	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
 	replace(6400, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
-	replace(6400, gameArgCReplaced, gameArgC, "${resolution_width}", "1618"); //* Hey
-	replace(6400, gameArgC, gameArgCReplaced, "${resolution_height}", "1000"); //* Hey
+	int wid, hei;
+	RegGetValueA(hData, NULL, "WindowWidth", RRF_RT_REG_DWORD, NULL, &wid, &sz);
+	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &hei, &sz);
+	char temp[20];
+	replace(6400, gameArgCReplaced, gameArgC, "${resolution_width}", itoa(wid, temp, 10));
+	replace(6400, gameArgC, gameArgCReplaced, "${resolution_height}", itoa(hei, temp, 10));
 	char latest[256];
 	strcpyf(latest, "versions\\%s\\%s-natives\\", versionId, versionId);
 	replace(6400, gameArgCReplaced, gameArgC, "${natives_directory}", latest);
@@ -280,17 +304,18 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	replace(6400, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
 	char* jvmArgCReplaced = (char*)malloc(6402);
 	replace(6400, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
-	free(jvmArgC);
-	strcatf(output, " %s %s %s", jvmArgCReplaced, versionInfo["mainClass"].asCString(), gameArgCReplaced);
+	replace(6400, jvmArgCReplaced, jvmArgC, "${natives_directory}", latest);
+	free(jvmArgCReplaced);
+	strcatf(output, " %s %s %s", jvmArgC, versionInfo["mainClass"].asCString(), gameArgCReplaced);
 	if (find(gameArgC, "--width") == -1) {
-		strcatf(output, " --width %d --height %d", 1618, 1000);
+		strcatf(output, " --width %d --height %d", wid, hei);
 	}
 
 	// Clean
 
 	free(tmpC);
 	free(gameArgC);
-	free(jvmArgCReplaced);
+	free(jvmArgC);
 	free(gameArgCReplaced);
 	int f = 0;
 
@@ -313,6 +338,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	si.wShowWindow = SW_HIDE;
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 
+	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
+	FILE* outFile = fopen(tmpS, "w");
+	fprintf(outFile, "@echo off\ntitle Minecraft Log\ncd /d F:\\Minecraft\\\n%s", output);
+	fclose(outFile);
 	if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
 		NULL, cwd, &si, &pi)) {
 		DWORD ret = GetLastError();
