@@ -24,9 +24,7 @@
 #define DEBUG_MODE 0
 using namespace std;
 
-char name[15] = "RiverLauncher2";
 Json::Reader reader;
-Json::Value accounts;
 FILE* programmeLog = fopen(".river_log.txt", "w");
 HKEY hData;
 DWORD sz = 4;

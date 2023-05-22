@@ -2,7 +2,7 @@
 
 #include <river/defines.h>
 
-int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit* edi, RvG::Window* x) {
+int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label* edi, RvG::Window* x) {
 	
 	// Prepare
 
@@ -21,9 +21,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	strcat(fvJson, ".json");
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
-	if (accounts.size() == 0) {
-		MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
-	}
+	//if (accounts.size() == 0) {
+	//	MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
+	//}
+	//* Hey
 
 	ifstream file(fvJson);
 	Json::Value versionInfo;
@@ -257,7 +258,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 
 	// Write into output
 
-	strcpy(output, "java -Dminecraft.client.jar=");
+	strcpy(output, "javaw -Dminecraft.client.jar=");
 	strcatf(output, "versions\\%s\\%s.jar", versionId, versionId);
 	if (find(jvmArgC, "-Djava.library.path") == -1) {
 		strcatf(output, " -Djava.library.path=%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
@@ -335,12 +336,12 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Edit*
 	GetStartupInfoA(&si);
 	si.hStdError = hWrite;
 	si.hStdOutput = hWrite;
-	si.wShowWindow = SW_HIDE;
+	si.wShowWindow = SW_SHOW;
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 
 	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
 	FILE* outFile = fopen(tmpS, "w");
-	fprintf(outFile, "@echo off\ntitle Minecraft Log\ncd /d F:\\Minecraft\\\n%s", output);
+	fprintf(outFile, "@echo off\ntitle Minecraft Log\ncd /d %s\n%s", cwd, output);
 	fclose(outFile);
 	if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
 		NULL, cwd, &si, &pi)) {
