@@ -150,7 +150,6 @@ int main() {
 					lisAccountsList->add(tempW);
 				}
 				lisAccountsList->show();
-				writeLog("6", "%d", intAccountsSel);
 				lisAccountsList->setSelIndex(accounts.size() - 1);
 				intAccountsSel = accounts.size() - 1;
 				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
