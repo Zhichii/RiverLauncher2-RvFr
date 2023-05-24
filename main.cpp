@@ -263,23 +263,20 @@ int main() {
 		return 0;
 	});
 	thread thr([]()->int {
-		while (1) {
+		while (IsWindowVisible(x->hWnd)) {
 			if (curPage == pageMinecraft) {
 				intMinecraftSel = lisMinecraftVersion->getSelIndex();
 				RegSetKeyValueA(hData, NULL, "SelectedLaunch", REG_DWORD, &intMinecraftSel, 4);
 			}
 			if (curPage == pageSettings) {
 				GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
-				if (strcmp(baseStr, "") != 0) {
-					baseStr[strlen(baseStr)] = 0;
-					RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
-				}
 			}
 			if (curPage == pageAccounts) {
 				intAccountsSel = lisAccountsList->getSelIndex();
 				baseStr[strlen(baseStr)] = 0;
 				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
 			}
+			Sleep(50);
 		}
 		return 0;
 	});
