@@ -270,8 +270,10 @@ int main() {
 			}
 			if (curPage == pageSettings) {
 				GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
-				baseStr[strlen(baseStr)] = 0;
-				RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
+				if (strcmp(baseStr, "") != 0) {
+					baseStr[strlen(baseStr)] = 0;
+					RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
+				}
 			}
 			if (curPage == pageAccounts) {
 				intAccountsSel = lisAccountsList->getSelIndex();
