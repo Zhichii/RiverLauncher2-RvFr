@@ -48,7 +48,7 @@ int main() {
 	RVG_START;
 	initData();
 	x = new RvG::Window(L"RiverLauncher2", 0);
-	SendMessage(x->hWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
+	SendMessage(x->hWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
 	SendMessage(x->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
 	btnLaunch = new RvG::Button(L"Launch", 0, 0, 125, 125, x);
 	swiMinecraft = new RvG::Button(L"Minecraft", 0, 150, 100, 50, x);

@@ -159,6 +159,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="ico.ico" />
+    <Image Include="icoBig.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="man.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

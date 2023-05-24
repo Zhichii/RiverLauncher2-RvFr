@@ -355,12 +355,11 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	char buf[4098];
 	DWORD bytesRead;
 	thread thr([&]()->int {
-		while (ReadFile(hRead, (char*)buf, 10240, (LPDWORD) &bytesRead, NULL)) {
+		while (ReadFile(hRead, (char*)buf, 4096, (LPDWORD) &bytesRead, NULL)) {
+			buf[strlen(buf)] = 0;
 			SetWindowTextA(edi->hWnd, buf);
 		}
-		char temp[10242];
-		strcpyf(temp, "Process ended! ");
-		SetWindowTextA(edi->hWnd, temp);
+		SetWindowTextA(edi->hWnd, "Process ended! ");
 		DWORD exitCode = 0;
 		GetExitCodeProcess(pi.hProcess, &exitCode);
 		CloseHandle(hRead);

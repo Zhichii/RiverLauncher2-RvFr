@@ -54,5 +54,11 @@
     <Image Include="ico.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icoBig.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="man.manifest" />
   </ItemGroup>
 </Project>
