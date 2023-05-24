@@ -30,6 +30,8 @@ RvG::Container* pageAccounts;
 RvG::Button* btnAccountsRegister;
 RvG::Button* swiAccountsAdd;
 RvG::Container* pageAccountsAdd;
+RvG::ListBox* lisAccountsList;
+RvG::Label* labAccountsPrompt;
 
 RvG::Button* swiSettings;
 RvG::Container* pageSettings;
@@ -117,18 +119,84 @@ int main() {
 	// Page Accounts
 
 	pageAccounts = new RvG::Container(150, 25, 600, 400, x);
+	lisAccountsList = new RvG::ListBox(161, 0, 161, 100, pageAccounts);
+	labAccountsPrompt = new RvG::Label(L"Please add a new account! ", 161, 0, 161, 100, pageAccounts);
 	btnAccountsRegister = new RvG::Button(L"Add account", 0, 0, 161, 100, pageAccounts);
-	btnAccountsRegister->bindCommand([](HWND win, HWND btn){
-		RvG::Window* dialog = new RvG::Window(L"Dialog", 1, CW_USEDEFAULT, CW_USEDEFAULT, 400, 200);
-		dialog->keepResponding();
+	btnAccountsRegister->bindCommand([](HWND win, HWND btn) {
+		thread thr([&]() {
+			RvG::Window* dialog = new RvG::Window(L"Dialog", 1, CW_USEDEFAULT, CW_USEDEFAULT, 400, 250);
+			RvG::Label* labDialogPromptUsernamee = new RvG::Label(L"Player Name: ", 10, 10, 362, 20, dialog);
+			inpDialogUsername = new RvG::InputBox(L"Player", 10, 30, 362, 30, dialog);
+			RvG::Button* btnDialogOk = new RvG::Button(L"Add", 166, 70, 100, 40, dialog);
+			RvG::Button* btnDialogCan = new RvG::Button(L"Cancel", 272, 70, 100, 40, dialog);
+			btnDialogOk->bindCommand([](HWND win, HWND btn) {
+				Json::Value temp = Json::objectValue;
+				//memset(baseStr, 0, 256);
+				GetWindowTextA(inpDialogUsername->hWnd, baseStr, 256);
+				temp["userName"] = baseStr;
+				accounts.append(temp);
+				Json::FastWriter writer;
+				string s = writer.write(accounts);
+				s[s.size() - 1] = 0;
+				strcpy(baseStr, s.c_str());
+				RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, baseStr, strlen(baseStr)+1);
+				char tempA[514];
+				wchar_t tempW[514];
+				SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
+				for (Json::Value i : accounts) {
+					strcpy(tempA, i["userName"].asCString());
+					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+					tempW[strlen(tempA)] = 0;
+					lisAccountsList->add(tempW);
+				}
+				lisAccountsList->show();
+				writeLog("6", "%d", intAccountsSel);
+				lisAccountsList->setSelIndex(accounts.size() - 1);
+				intAccountsSel = accounts.size() - 1;
+				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
+				labAccountsPrompt->hide();
+				DestroyWindow(win);
+				return 0;
+			});
+			btnDialogCan->bindCommand([](HWND win, HWND btn) {
+				DestroyWindow(win);
+				return 0;
+			});
+			SetFocus(dialog->hWnd);
+			dialog->keepResponding();
+		});
+		thr.detach();
 		return 0;
-	});
+	});	
+	char tempA[514] = {};
+	wchar_t tempW[514];
+	tempW[lstrlen(tempW)] = 0;
+	sz = lstrlen(tempW)+1;
+	RegGetValueA(hData, NULL, "Accounts", RRF_RT_REG_SZ, NULL, tempA, &sz);
+	reader.parse(tempA, accounts);
+	sz = 4;
+	RegGetValueA(hData, NULL, "SelectedAccount", RRF_RT_REG_DWORD, NULL, &intAccountsSel, &sz);
+	if (accounts.size() != 0) {
+		for (Json::Value i : accounts) {
+			strcpy(tempA, i["userName"].asCString());
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+			tempW[lstrlen(tempW)] = 0;
+			lisAccountsList->add(tempW);
+		}
+		lisAccountsList->setSelIndex(intAccountsSel);
+		lisAccountsList->show();
+		labAccountsPrompt->hide();
+	}
+	else {
+		labAccountsPrompt->show();
+		lisAccountsList->hide();
+	}
 
 	// Page Settings
 	
-	wchar_t tempW[514] = {};
 	sz = 512;
 	RegGetValue(hData, NULL, L"MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempW, &sz);
+	tempW[lstrlen(tempW)] = 0;
 	pageSettings = new RvG::Container(150, 25, 600, 400, x);
 	labSettingsDir = new RvG::Label(L"Minecraft Directory", 3, 5, 200, 20, pageSettings);
 	ediSettingsDir = new RvG::InputBox(tempW, 125, 0, 300, 25, pageSettings);
@@ -167,6 +235,26 @@ int main() {
 		curPage->hide();
 		curPage = pageAccounts;
 		curPage->show();
+		char tempA[1026] = {};
+		wchar_t tempW[1026] = {};
+		sz = 1024;
+		RegGetValueA(hData, NULL, "Accounts", RRF_RT_REG_SZ, NULL, tempA, &sz);
+		reader.parse(tempA, accounts);
+		RegGetValueA(hData, NULL, "SelectedAccount", RRF_RT_REG_DWORD, NULL, &intAccountsSel, &sz);
+		if (accounts.size() != 0) {
+			SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
+			for (Json::Value i : accounts) {
+				strcpy(tempA, i["userName"].asCString());
+				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+				tempW[strlen(tempA)] = 0;
+				lisAccountsList->add(tempW);
+			}
+			lisAccountsList->setSelIndex(intAccountsSel);
+			labAccountsPrompt->hide();
+		}
+		else {
+			lisAccountsList->hide();
+		}
 		return 0;
 	});
 	swiSettings->bindCommand([](HWND win, HWND btn)->int {
@@ -185,6 +273,11 @@ int main() {
 				GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
 				baseStr[strlen(baseStr)] = 0;
 				RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
+			}
+			if (curPage == pageAccounts) {
+				intAccountsSel = lisAccountsList->getSelIndex();
+				baseStr[strlen(baseStr)] = 0;
+				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
 			}
 		}
 		return 0;

@@ -21,10 +21,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	strcat(fvJson, ".json");
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
-	//if (accounts.size() == 0) {
-	//	MessageBox(edit, L"No accounts created! ", L"Prompt", MB_OK | MB_ICONINFORMATION);
-	//}
-	//* Hey
+	if (accounts.size() == 0) {
+		MessageBox(edit, L"No accounts created! ", L"Error", MB_OK | MB_ICONERROR);
+		return 0;
+	}
 
 	ifstream file(fvJson);
 	Json::Value versionInfo;
@@ -279,7 +279,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 		replace(6400, gameArgC, gameArgCReplaced, " --tweakClass optifine.OptiFineForgeTweaker", "");
 		strcpyf(gameArgC, "%s --tweakClass optifine.OptiFineForgeTweaker", gameArgCReplaced);
 	}
-	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", "Player");
+	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", accounts[intAccountsSel]["userName"].asCString());
 	replace(6400, gameArgCReplaced, gameArgC, "${version_name}", versionId);
 	replace(6400, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
 	replace(6400, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
@@ -354,18 +354,19 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	CloseHandle(hWrite);
 	char buf[4098];
 	DWORD bytesRead;
-	thread thr([=]() {
-		while (ReadFile(hRead, (char*)buf, 4096, (LPDWORD) &bytesRead, NULL)) {
+	thread thr([&]()->int {
+		while (ReadFile(hRead, (char*)buf, 5120, (LPDWORD) &bytesRead, NULL)) {
 			SetWindowTextA(edi->hWnd, buf);
 		}
-		char temp[4096];
-		strcpyf(temp, "Process ended with \"%s\"! ", buf);
+		char temp[5122];
+		strcpyf(temp, "Process ended! ");
 		SetWindowTextA(edi->hWnd, temp);
 		DWORD exitCode = 0;
 		GetExitCodeProcess(pi.hProcess, &exitCode);
 		CloseHandle(hRead);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
+		return 0;
 	});
 	thr.detach();
 	return 0;

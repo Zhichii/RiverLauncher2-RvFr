@@ -28,6 +28,10 @@ Json::Reader reader;
 FILE* programmeLog = fopen(".river_log.txt", "w");
 HKEY hData;
 DWORD sz = 4;
+Json::Value accounts = Json::arrayValue;
+int intAccountsSel = 0;
+
+RvG::InputBox* inpDialogUsername;
 
 
 HANDLE hRead, hWrite;

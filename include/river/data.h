@@ -18,11 +18,14 @@ int initData() {
 	t = 600;
 	if (RegQueryValueEx(hData, L"WindowHeight", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "WindowHeight", REG_DWORD, &t, 4);
+	t = 0;
+	if (RegQueryValueEx(hData, L"SelectedAccount", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
+		RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &t, 4);
 	
 	dwType = REG_SZ;
 	if (RegQueryValueEx(hData, L"MinecraftDirectory", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, "\0", 1);
-	if (RegQueryValueEx(hData, L"Users", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
-		RegSetKeyValueA(hData, NULL, "Users", REG_SZ, "Player\0", 7);
+	if (RegQueryValueEx(hData, L"Accounts", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
+		RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, "[]\0", 3);
 	return 0;
 }
