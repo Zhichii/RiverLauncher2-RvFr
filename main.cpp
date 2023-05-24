@@ -64,8 +64,8 @@ int main() {
 	btnMinecraftEnd = new RvG::Button(L"End Process", 0, 0, 161, 100, pageMinecraft);
 	labMinecraftLog = new RvG::Label(L"The log will show here", 0, 100, 600, 400, pageMinecraft, WS_BORDER);
 	struct _stat fileStat;
-	char temp[514];
-	sz = 512;
+	char temp[1026];
+	sz = 1024;
 	RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
 	strcat(temp, "\\versions");
 	lisMinecraftVersion = new RvG::ListBox(161, 0, 161, 100, pageMinecraft);
@@ -74,8 +74,8 @@ int main() {
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
 			std::string fileName = v.path().filename().string();
 			const char* A = fileName.c_str();
-			wchar_t W[514] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, A, strlen(A), W, 512);
+			wchar_t W[1026] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, A, strlen(A), W, 1024);
 			lisMinecraftVersion->add(W);
 		}
 		int t = 0; sz = 4;
@@ -140,12 +140,12 @@ int main() {
 				s[s.size() - 1] = 0;
 				strcpy(baseStr, s.c_str());
 				RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, baseStr, strlen(baseStr)+1);
-				char tempA[514];
-				wchar_t tempW[514];
+				char tempA[1026];
+				wchar_t tempW[1026];
 				SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
 				for (Json::Value i : accounts) {
 					strcpy(tempA, i["userName"].asCString());
-					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
 					tempW[strlen(tempA)] = 0;
 					lisAccountsList->add(tempW);
 				}
@@ -167,18 +167,18 @@ int main() {
 		thr.detach();
 		return 0;
 	});	
-	char tempA[514] = {};
-	wchar_t tempW[514];
-	tempW[lstrlen(tempW)] = 0;
-	sz = lstrlen(tempW)+1;
+	char tempA[1026] = {};
+	wchar_t tempW[1026];
+	sz = 1024;
 	RegGetValueA(hData, NULL, "Accounts", RRF_RT_REG_SZ, NULL, tempA, &sz);
+	tempW[strlen(tempA)] = 0;
 	reader.parse(tempA, accounts);
 	sz = 4;
 	RegGetValueA(hData, NULL, "SelectedAccount", RRF_RT_REG_DWORD, NULL, &intAccountsSel, &sz);
 	if (accounts.size() != 0) {
 		for (Json::Value i : accounts) {
 			strcpy(tempA, i["userName"].asCString());
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
 			tempW[lstrlen(tempW)] = 0;
 			lisAccountsList->add(tempW);
 		}
@@ -193,7 +193,7 @@ int main() {
 
 	// Page Settings
 	
-	sz = 512;
+	sz = 1024;
 	RegGetValue(hData, NULL, L"MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempW, &sz);
 	tempW[lstrlen(tempW)] = 0;
 	pageSettings = new RvG::Container(150, 25, 600, 400, x);
@@ -214,8 +214,8 @@ int main() {
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(baseStr)) {
 				std::string fileName = v.path().filename().string();
 				const char* A = fileName.c_str();
-				wchar_t W[514] = {};
-				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, A, strlen(A), W, 512);
+				wchar_t W[1026] = {};
+				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, A, strlen(A), W, 1024);
 				lisMinecraftVersion->add(W);
 			}
 			int t; sz = 4;
@@ -244,7 +244,7 @@ int main() {
 			SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
 			for (Json::Value i : accounts) {
 				strcpy(tempA, i["userName"].asCString());
-				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
+				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
 				tempW[strlen(tempA)] = 0;
 				lisAccountsList->add(tempW);
 			}

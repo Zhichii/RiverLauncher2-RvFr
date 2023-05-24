@@ -9,10 +9,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	struct _stat fileStat;
 	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
 	else return 1;
-	char cwd[512];
+	char cwd[1024];
 	strcpy(cwd, dir);
 	strcat(cwd, "\\");
-	char fvJson[512]; // Full Version Json
+	char fvJson[1024]; // Full Version Json
 	strcpy(fvJson, cwd);
 	strcat(fvJson, "versions\\");
 	strcat(fvJson, versionId);
@@ -33,11 +33,11 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	Json::Value available;
 	Json::Value libraries = versionInfo["libraries"];
 	Json::Value tmp;
-	char theVersion[514];
+	char theVersion[1026];
 	Json::Value versionLib;
 	Json::Value libNameSp;
-	char libDir[514];
-	char tmpS[514];
+	char libDir[1026];
+	char tmpS[1026];
 	char* tmpC = NULL;
 	char* tmpC2 = NULL;
 	int tmpI;
@@ -51,7 +51,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	for (Json::Value i : libraries) {
 		valueSplit(i["name"].asCString(), ":", &tmp);
 		tmp[2] = "";
-		join(tmp, theVersion, 512, ":");
+		join(tmp, theVersion, 1024, ":");
 		mark = 0;
 		if (i["downloads"].isMember("artifact")) {
 			versionLib = i["downloads"]["artifact"];
@@ -74,7 +74,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 				libNameSp[0] = tmpC;
 				free(tmpC);
 				tmpC = NULL;
-				join(libNameSp, libDir, 512, "\\");
+				join(libNameSp, libDir, 1024, "\\");
 				strcpyf(tmpS, "libraries\\%s\\%s-%s.jar", libDir, libNameSp[1].asCString(), libNameSp[2].asCString());
 				for (int i = 0; i < strlen(libDir); i++) {
 					if (libDir[i] == '/') libDir[i] = '\\';
@@ -110,22 +110,22 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 			if (libDir[i] == '/') libDir[i] = '\\';
 		}
 		if (i.isMember("natives")) {
-			char nativeTmp[514] = {};
+			char nativeTmp[1026] = {};
 			strcpyf(nativeTmp, "%slibraries\\%s", cwd, versionLib["path"].asCString());
-			for (int i = 0; i < 512; i++) {
+			for (int i = 0; i < 1024; i++) {
 				if (nativeTmp[i] == 0) break;
 				if (nativeTmp[i] == '/') nativeTmp[i] = '\\';
 			}
-			wchar_t nativeTmpW[514] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 512);
+			wchar_t nativeTmpW[1026] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 1024);
 			HZIP hZip = OpenZip(nativeTmpW, NULL);
 			ZIPENTRY ze;
 			GetZipItem(hZip, -1, &ze);
 			int nums = ze.index;
-			char nativeLatestA[514] = {};
+			char nativeLatestA[1026] = {};
 			strcpyf(nativeLatestA, "%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
-			wchar_t nativeLatestW[514] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 512);
+			wchar_t nativeLatestW[1026] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 1024);
 			SetUnzipBaseDir(hZip, nativeLatestW);
 			for (int i = 0; i < nums; i++) {
 				GetZipItem(hZip, i, &ze);
@@ -143,7 +143,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 		tmp.append(i.asCString());
 	}
 	available.empty();
-	char fvJar[512];
+	char fvJar[1024];
 	strcpy(fvJar, fvJson);
 	strcpy(fvJar + strlen(fvJson) - 5, ".jar\0");
 	tmp.append(fvJar);
@@ -355,10 +355,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	char buf[4098];
 	DWORD bytesRead;
 	thread thr([&]()->int {
-		while (ReadFile(hRead, (char*)buf, 5120, (LPDWORD) &bytesRead, NULL)) {
+		while (ReadFile(hRead, (char*)buf, 10240, (LPDWORD) &bytesRead, NULL)) {
 			SetWindowTextA(edi->hWnd, buf);
 		}
-		char temp[5122];
+		char temp[10242];
 		strcpyf(temp, "Process ended! ");
 		SetWindowTextA(edi->hWnd, temp);
 		DWORD exitCode = 0;
