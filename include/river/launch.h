@@ -157,8 +157,10 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	if (versionInfo.isMember("arguments")) level = 1;
 	else if (versionInfo.isMember("minecraftArguments")) level = 0;
 	else {
-		writeLog("launchInstance", "Unknow launch level, default to 0. ");
-		level = 0;
+		writeLog("launchInstance", "Unknow launch level. ");
+		MessageBox(edit, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
+		free(tmpC);
+		return 0;
 	}
 	libraries.empty();
 	tmp.empty();
@@ -290,9 +292,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
 	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
 	replace(6400, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
-	int wid, hei;
-	RegGetValueA(hData, NULL, "WindowWidth", RRF_RT_REG_DWORD, NULL, &wid, &sz);
-	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &hei, &sz);
+	int wid = intSettingsWid, hei = intSettingsHei;
 	char temp[20];
 	replace(6400, gameArgCReplaced, gameArgC, "${resolution_width}", itoa(wid, temp, 10));
 	replace(6400, gameArgC, gameArgCReplaced, "${resolution_height}", itoa(hei, temp, 10));

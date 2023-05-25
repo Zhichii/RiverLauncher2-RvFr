@@ -30,6 +30,8 @@ HKEY hData;
 DWORD sz = 4;
 Json::Value accounts = Json::arrayValue;
 int intAccountsSel = 0;
+int intSettingsWid;
+int intSettingsHei;
 
 RvG::InputBox* inpDialogUsername;
 

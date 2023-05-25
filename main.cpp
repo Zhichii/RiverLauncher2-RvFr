@@ -37,6 +37,9 @@ RvG::Button* swiSettings;
 RvG::Container* pageSettings;
 RvG::Label* labSettingsDir;
 RvG::InputBox* ediSettingsDir;
+RvG::Label* labSettingsSize;
+RvG::InputBox* ediSettingsWid;
+RvG::InputBox* ediSettingsHei;
 
 RvG::Button* swiMods;
 RvG::Container* pageMods;
@@ -179,7 +182,6 @@ int main() {
 		for (Json::Value i : accounts) {
 			strcpy(tempA, i["userName"].asCString());
 			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
-			tempW[lstrlen(tempW)] = 0;
 			lisAccountsList->add(tempW);
 		}
 		lisAccountsList->setSelIndex(intAccountsSel);
@@ -195,10 +197,15 @@ int main() {
 	
 	sz = 1024;
 	RegGetValue(hData, NULL, L"MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempW, &sz);
-	tempW[lstrlen(tempW)] = 0;
 	pageSettings = new RvG::Container(150, 25, 600, 400, x);
 	labSettingsDir = new RvG::Label(L"Minecraft Directory", 3, 5, 200, 20, pageSettings);
 	ediSettingsDir = new RvG::InputBox(tempW, 125, 0, 300, 25, pageSettings);
+	labSettingsSize = new RvG::Label(L"Minecraft Window Size", 3, 35, 200, 20, pageSettings);
+	sz = 4;
+	RegGetValueA(hData, NULL, "WindowWidth", RRF_RT_REG_DWORD, NULL, &intSettingsWid, &sz);
+	ediSettingsWid = new RvG::InputBox(_itow(intSettingsWid, tempW, 10), 125, 30, 50, 25, pageSettings);
+	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &intSettingsHei, &sz);
+	ediSettingsHei = new RvG::InputBox(_itow(intSettingsHei, tempW, 10), 180, 30, 50, 25, pageSettings);
 
 
 
@@ -263,19 +270,27 @@ int main() {
 		return 0;
 	});
 	thread thr([]()->int {
-		while (IsWindowVisible(x->hWnd)) {
-			if (curPage == pageMinecraft) {
+		while (1) {
+			if (curPage == pageMinecraft && IsWindowVisible(x->hWnd)) {
 				intMinecraftSel = lisMinecraftVersion->getSelIndex();
 				RegSetKeyValueA(hData, NULL, "SelectedLaunch", REG_DWORD, &intMinecraftSel, 4);
 			}
-			if (curPage == pageSettings) {
+			if (curPage == pageSettings && IsWindowVisible(x->hWnd)) {
 				GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
+				RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
+				GetWindowTextA(ediSettingsWid->hWnd, baseStr, 256);
+				intSettingsWid = atoi(baseStr);
+				RegSetKeyValueA(hData, NULL, "WindowWidth", REG_DWORD, &intSettingsWid, 4);
+				GetWindowTextA(ediSettingsHei->hWnd, baseStr, 256);
+				intSettingsHei = atoi(baseStr);
+				RegSetKeyValueA(hData, NULL, "WindowHeight", REG_DWORD, &intSettingsHei, 4);
 			}
-			if (curPage == pageAccounts) {
+			if (curPage == pageAccounts && IsWindowVisible(x->hWnd)) {
 				intAccountsSel = lisAccountsList->getSelIndex();
 				baseStr[strlen(baseStr)] = 0;
 				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
 			}
+			if (!IsWindowVisible(x->hWnd)) break;
 			Sleep(50);
 		}
 		return 0;
