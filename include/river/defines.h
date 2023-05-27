@@ -19,6 +19,7 @@
 #include <json/json_value.cpp>
 #include <json/json.h>
 #include <zip/unzip.h>
+#include <requests/requests.h>
 #define INT_MAX 2147483647
 #define ALLOC 4096
 #define DEBUG_MODE 0

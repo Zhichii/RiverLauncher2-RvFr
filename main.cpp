@@ -7,6 +7,7 @@
 #include <Commctrl.h>
 #include <thread>
 using namespace std;
+using namespace requests;
 
 int btn1_i = 0;
 
@@ -44,6 +45,11 @@ RvG::InputBox* ediSettingsHei;
 RvG::Button* swiMods;
 RvG::Container* pageMods;
 
+RvG::Button* swiMinecraftBE;
+RvG::Container* pageMinecraftBE;
+RvG::Button* btnMinecraftBELaunch;
+RvG::Button* btnMinecraftBEPreviewLaunch;
+
 char baseStr[258];
 char newStr[258];
 
@@ -53,17 +59,18 @@ int main() {
 	x = new RvG::Window(L"RiverLauncher2", 0);
 	SendMessage(x->hWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
 	SendMessage(x->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
-	btnLaunch = new RvG::Button(L"Launch", 0, 0, 125, 125, x);
-	swiMinecraft = new RvG::Button(L"Minecraft", 0, 150, 100, 50, x);
+	btnLaunch = new RvG::Button(L"Launch Java", 0, 0, 125, 125, x);
+	swiMinecraft = new RvG::Button(L"Minecraft JE", 0, 150, 100, 50, x);
 	swiAccounts = new RvG::Button(L"Accounts", 0, 200, 100, 50, x);
 	swiSettings = new RvG::Button(L"Settings", 0, 250, 100, 50, x);
 	swiMods = new RvG::Button(L"Developing", 0, 300, 100, 50, x);
+	swiMinecraftBE = new RvG::Button(L"Minecraft BE", 0, 350, 100, 50, x);
 
 
 
 	// Page Minecraft
 
-	pageMinecraft = new RvG::Container(150, 25, 600, 400, x);
+	pageMinecraft = new RvG::Container(170, 25, 600, 400, x);
 	btnMinecraftEnd = new RvG::Button(L"End Process", 0, 0, 161, 100, pageMinecraft);
 	labMinecraftLog = new RvG::Label(L"The log will show here", 0, 100, 600, 400, pageMinecraft, WS_BORDER);
 	struct _stat fileStat;
@@ -121,7 +128,7 @@ int main() {
 
 	// Page Accounts
 
-	pageAccounts = new RvG::Container(150, 25, 600, 400, x);
+	pageAccounts = new RvG::Container(170, 25, 600, 400, x);
 	lisAccountsList = new RvG::ListBox(161, 0, 161, 100, pageAccounts);
 	labAccountsPrompt = new RvG::Label(L"Please add a new account! ", 161, 0, 161, 100, pageAccounts);
 	btnAccountsRegister = new RvG::Button(L"Add account", 0, 0, 161, 100, pageAccounts);
@@ -197,7 +204,7 @@ int main() {
 	
 	sz = 1024;
 	RegGetValue(hData, NULL, L"MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempW, &sz);
-	pageSettings = new RvG::Container(150, 25, 600, 400, x);
+	pageSettings = new RvG::Container(170, 25, 600, 400, x);
 	labSettingsDir = new RvG::Label(L"Minecraft Directory", 3, 5, 200, 20, pageSettings);
 	ediSettingsDir = new RvG::InputBox(tempW, 125, 0, 300, 25, pageSettings);
 	labSettingsSize = new RvG::Label(L"Minecraft Window Size", 3, 35, 200, 20, pageSettings);
@@ -206,6 +213,80 @@ int main() {
 	ediSettingsWid = new RvG::InputBox(_itow(intSettingsWid, tempW, 10), 125, 30, 50, 25, pageSettings);
 	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &intSettingsHei, &sz);
 	ediSettingsHei = new RvG::InputBox(_itow(intSettingsHei, tempW, 10), 180, 30, 50, 25, pageSettings);
+
+
+	// Page Minecraft BE
+	pageMinecraftBE = new RvG::Container(170, 25, 600, 400, x);
+	btnMinecraftBELaunch = new RvG::Button(L"Launch Bedrock", 0, 0, 161, 100, pageMinecraftBE);
+	btnMinecraftBELaunch->bindCommand([](HWND win, HWND btn)->int {
+		SECURITY_ATTRIBUTES sa;
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.lpSecurityDescriptor = NULL;
+		sa.bInheritHandle = TRUE;
+
+		if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+			DWORD ret = GetLastError();
+			return ret ? ret : -1;
+		}
+
+		ZeroMemory(&si, sizeof(STARTUPINFO));
+
+		si.cb = sizeof(STARTUPINFO);
+		GetStartupInfoA(&si);
+		si.hStdError = hWrite;
+		si.hStdOutput = hWrite;
+		si.wShowWindow = SW_HIDE;
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		char tmpS[256];
+		strcpy(tmpS, "cmd /k start shell:appsfolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!app");
+		if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
+			NULL, NULL, &si, &pi)) {
+			DWORD ret = GetLastError();
+			CloseHandle(hRead);
+			CloseHandle(hWrite);
+			return ret ? ret : -1;
+		}
+
+		CloseHandle(hWrite);
+		char buf[4098];
+		DWORD bytesRead; 
+		return 0;
+	});
+	btnMinecraftBEPreviewLaunch = new RvG::Button(L"Launch Preview", 161, 0, 161, 100, pageMinecraftBE);
+	btnMinecraftBEPreviewLaunch->bindCommand([](HWND win, HWND btn)->int {
+		SECURITY_ATTRIBUTES sa;
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.lpSecurityDescriptor = NULL;
+		sa.bInheritHandle = TRUE;
+
+		if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+			DWORD ret = GetLastError();
+			return ret ? ret : -1;
+		}
+
+		ZeroMemory(&si, sizeof(STARTUPINFO));
+
+		si.cb = sizeof(STARTUPINFO);
+		GetStartupInfoA(&si);
+		si.hStdError = hWrite;
+		si.hStdOutput = hWrite;
+		si.wShowWindow = SW_HIDE;
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		char tmpS[256];
+		strcpy(tmpS, "cmd /k start shell:appsfolder\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe!app");
+		if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
+			NULL, NULL, &si, &pi)) {
+			DWORD ret = GetLastError();
+			CloseHandle(hRead);
+			CloseHandle(hWrite);
+			return ret ? ret : -1;
+		}
+
+		CloseHandle(hWrite);
+		char buf[4098];
+		DWORD bytesRead;
+		return 0;
+		});
 
 
 
@@ -269,6 +350,12 @@ int main() {
 		curPage->show();
 		return 0;
 	});
+	swiMinecraftBE->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		curPage = pageMinecraftBE;
+		curPage->show();
+		return 0;
+	});
 	thread thr([]()->int {
 		while (1) {
 			if (curPage == pageMinecraft && IsWindowVisible(x->hWnd)) {
@@ -300,6 +387,19 @@ int main() {
 	curPage = pageMinecraft;
 	pageAccounts->hide();
 	pageSettings->hide();
+	pageMinecraftBE->hide();
+	thread thr2([&]() {
+		Response* resp = (Response*)malloc(sizeof(resp));
+		try {
+			*resp = Get("https://launchermeta.mojang.com:443/mc/game/version_manifest_v2.json");
+		}
+		catch (const char* msg){
+			writeLog("Resp", msg);
+			return 0;
+		}
+		writeLog("Resp", (*resp).GetText().c_str());
+	});
+	thr2.detach();
 	x->keepResponding();
 	return 0;
 }

@@ -158,8 +158,8 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	else if (versionInfo.isMember("minecraftArguments")) level = 0;
 	else {
 		writeLog("launchInstance", "Unknow launch level. ");
-		MessageBox(edit, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
 		free(tmpC);
+		MessageBox(edit, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	libraries.empty();
