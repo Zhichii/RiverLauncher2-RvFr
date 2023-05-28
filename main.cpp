@@ -108,7 +108,7 @@ int main() {
 		if (GetHandleInformation(pi.hProcess, &rec)) {
 			MessageBox(win, L"One process is already running! ", L"Error", MB_OK | MB_ICONERROR);
 		}
-		else if (launchInstance(baseStr, newStr, *ediSettingsDir, labMinecraftLog, x) == 1) {
+		else if (launchInstance(baseStr, newStr, labMinecraftLog, x) == 1) {
 			MessageBox(win, L"Uncorrect Parameters! Check the folder and the instance exists! ", L"Error", MB_OK | MB_ICONERROR);
 		}
 		return 0;

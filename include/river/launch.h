@@ -2,7 +2,7 @@
 
 #include <river/defines.h>
 
-int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label* edi, RvG::Window* x) {
+int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG::Window* x) {
 	
 	// Prepare
 
@@ -22,7 +22,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
 	if (accounts.size() == 0) {
-		MessageBox(edit, L"No accounts created! ", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(*x, L"No accounts created! ", L"Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
 
@@ -159,7 +159,7 @@ int launchInstance(const char* versionId, const char* dir, HWND edit, RvG::Label
 	else {
 		writeLog("launchInstance", "Unknow launch level. ");
 		free(tmpC);
-		MessageBox(edit, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(*x, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	libraries.empty();
