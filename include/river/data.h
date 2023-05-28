@@ -27,5 +27,7 @@ int initData() {
 		RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, "\0", 1);
 	if (RegQueryValueEx(hData, L"Accounts", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, "[]\0", 3);
+	if (RegQueryValueEx(hData, L"LatestKnown", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
+		RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, "\0", 1);
 	return 0;
 }

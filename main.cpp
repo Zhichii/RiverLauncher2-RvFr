@@ -57,8 +57,8 @@ int main() {
 	RVG_START;
 	initData();
 	x = new RvG::Window(L"RiverLauncher2", 0);
-	SendMessage(x->hWnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
-	SendMessage(x->hWnd, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
+	SendMessage(*x, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
+	SendMessage(*x, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
 	btnLaunch = new RvG::Button(L"Launch Java", 0, 0, 125, 125, x);
 	swiMinecraft = new RvG::Button(L"Minecraft JE", 0, 150, 100, 50, x);
 	swiAccounts = new RvG::Button(L"Accounts", 0, 200, 100, 50, x);
@@ -102,13 +102,13 @@ int main() {
 			MessageBox(win, L"Please set a valid Minecraft directory! ", L"Error", MB_OK | MB_ICONERROR);
 			return 0;
 		}
-		GetWindowTextA(ediSettingsDir->hWnd, newStr, 256);
+		GetWindowTextA(*ediSettingsDir, newStr, 256);
 		lisMinecraftVersion->getText(intMinecraftSel, baseStr);
 		DWORD rec;
 		if (GetHandleInformation(pi.hProcess, &rec)) {
 			MessageBox(win, L"One process is already running! ", L"Error", MB_OK | MB_ICONERROR);
 		}
-		else if (launchInstance(baseStr, newStr, ediSettingsDir->hWnd, labMinecraftLog, x) == 1) {
+		else if (launchInstance(baseStr, newStr, *ediSettingsDir, labMinecraftLog, x) == 1) {
 			MessageBox(win, L"Uncorrect Parameters! Check the folder and the instance exists! ", L"Error", MB_OK | MB_ICONERROR);
 		}
 		return 0;
@@ -142,7 +142,7 @@ int main() {
 			btnDialogOk->bindCommand([](HWND win, HWND btn) {
 				Json::Value temp = Json::objectValue;
 				//memset(baseStr, 0, 256);
-				GetWindowTextA(inpDialogUsername->hWnd, baseStr, 256);
+				GetWindowTextA(*inpDialogUsername, baseStr, 256);
 				temp["userName"] = baseStr;
 				accounts.append(temp);
 				Json::FastWriter writer;
@@ -152,7 +152,7 @@ int main() {
 				RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, baseStr, strlen(baseStr)+1);
 				char tempA[1026];
 				wchar_t tempW[1026];
-				SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
+				SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 				for (Json::Value i : accounts) {
 					strcpy(tempA, i["userName"].asCString());
 					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
@@ -171,7 +171,7 @@ int main() {
 				DestroyWindow(win);
 				return 0;
 			});
-			SetFocus(dialog->hWnd);
+			SetFocus(*dialog);
 			dialog->keepResponding();
 		});
 		thr.detach();
@@ -295,10 +295,10 @@ int main() {
 		curPage = pageMinecraft;
 		curPage->show();
 		struct _stat fileStat;
-		GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
+		GetWindowTextA(*ediSettingsDir, baseStr, 256);
 		strcat(baseStr, "\\versions");
 		if ((_stat(baseStr, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
-			SendMessage(lisMinecraftVersion->hWnd, LB_RESETCONTENT, 0, 0);
+			SendMessage(*lisMinecraftVersion, LB_RESETCONTENT, 0, 0);
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(baseStr)) {
 				std::string fileName = v.path().filename().string();
 				const char* A = fileName.c_str();
@@ -329,7 +329,7 @@ int main() {
 		reader.parse(tempA, accounts);
 		RegGetValueA(hData, NULL, "SelectedAccount", RRF_RT_REG_DWORD, NULL, &intAccountsSel, &sz);
 		if (accounts.size() != 0) {
-			SendMessage(lisAccountsList->hWnd, LB_RESETCONTENT, 0, 0);
+			SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 			for (Json::Value i : accounts) {
 				strcpy(tempA, i["userName"].asCString());
 				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 1024);
@@ -358,26 +358,26 @@ int main() {
 	});
 	thread thr([]()->int {
 		while (1) {
-			if (curPage == pageMinecraft && IsWindowVisible(x->hWnd)) {
+			if (curPage == pageMinecraft && IsWindowVisible(*x)) {
 				intMinecraftSel = lisMinecraftVersion->getSelIndex();
 				RegSetKeyValueA(hData, NULL, "SelectedLaunch", REG_DWORD, &intMinecraftSel, 4);
 			}
-			if (curPage == pageSettings && IsWindowVisible(x->hWnd)) {
-				GetWindowTextA(ediSettingsDir->hWnd, baseStr, 256);
+			if (curPage == pageSettings && IsWindowVisible(*x)) {
+				GetWindowTextA(*ediSettingsDir, baseStr, 256);
 				RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, baseStr, strlen(baseStr) + 1);
-				GetWindowTextA(ediSettingsWid->hWnd, baseStr, 256);
+				GetWindowTextA(*ediSettingsWid, baseStr, 256);
 				intSettingsWid = atoi(baseStr);
 				RegSetKeyValueA(hData, NULL, "WindowWidth", REG_DWORD, &intSettingsWid, 4);
-				GetWindowTextA(ediSettingsHei->hWnd, baseStr, 256);
+				GetWindowTextA(*ediSettingsHei, baseStr, 256);
 				intSettingsHei = atoi(baseStr);
 				RegSetKeyValueA(hData, NULL, "WindowHeight", REG_DWORD, &intSettingsHei, 4);
 			}
-			if (curPage == pageAccounts && IsWindowVisible(x->hWnd)) {
+			if (curPage == pageAccounts && IsWindowVisible(*x)) {
 				intAccountsSel = lisAccountsList->getSelIndex();
 				baseStr[strlen(baseStr)] = 0;
 				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
 			}
-			if (!IsWindowVisible(x->hWnd)) break;
+			if (!IsWindowVisible(*x)) break;
 			Sleep(50);
 		}
 		return 0;
@@ -388,16 +388,26 @@ int main() {
 	pageAccounts->hide();
 	pageSettings->hide();
 	pageMinecraftBE->hide();
-	thread thr2([&]() {
-		Response* resp = (Response*)malloc(sizeof(resp));
+	thread thr2([]() {
 		try {
-			*resp = Get("https://launchermeta.mojang.com:443/mc/game/version_manifest_v2.json");
+			Response resp = Get("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
+			Json::Value versions;
+			reader.parse((resp).GetText(), versions);
+			char temp[64] = {};
+			sz = 64;
+			RegGetValueA(hData, NULL, "LatestKnown", RRF_RT_REG_SZ, NULL, temp, &sz);
+			writeLog("Resp", temp);
+			if (temp[0] == 0 || strcmp(temp, versions["latest"]["snapshot"].asCString())) {
+				strcpyf(temp, "New version released: %s", versions["latest"]["snapshot"].asCString());
+				sz = strlen(versions["latest"]["snapshot"].asCString())+1;
+				RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, versions["latest"]["snapshot"].asCString(), sz);
+				MessageBoxA(*x, temp, "Prompt", MB_OK | MB_ICONINFORMATION);
+			}
 		}
 		catch (const char* msg){
 			writeLog("Resp", msg);
 			return 0;
 		}
-		writeLog("Resp", (*resp).GetText().c_str());
 	});
 	thr2.detach();
 	x->keepResponding();
