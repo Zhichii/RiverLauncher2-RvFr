@@ -19,7 +19,7 @@ RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;
 RvG::Button* btnMinecraftEnd;
 RvG::Label* labMinecraftLog;
-RvG::Label* lisMinecraftVersionPrompt;
+RvG::Label* labMinecraftVersionPrompt;
 RvG::ListBox* lisMinecraftVersion;
 int intMinecraftSel = 0;
 
@@ -36,9 +36,7 @@ RvG::Label* labAccountsPrompt;
 
 RvG::Button* swiSettings;
 RvG::Container* pageSettings;
-RvG::Label* labSettingsDir;
 RvG::InputBox* ediSettingsDir;
-RvG::Label* labSettingsSize;
 RvG::InputBox* ediSettingsWid;
 RvG::InputBox* ediSettingsHei;
 
@@ -79,7 +77,7 @@ int main() {
 	RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
 	strcat(temp, "\\versions");
 	lisMinecraftVersion = new RvG::ListBox(161, 0, 161, 100, pageMinecraft);
-	lisMinecraftVersionPrompt = new RvG::Label(L"Please set a valid Minecraft directory! ", 161, 0, 161, 100, pageMinecraft);
+	labMinecraftVersionPrompt = new RvG::Label(L"Please set a valid Minecraft directory! ", 161, 0, 161, 100, pageMinecraft);
 	if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
 			std::string fileName = v.path().filename().string();
@@ -91,7 +89,7 @@ int main() {
 		int t = 0; sz = 4;
 		RegGetValueA(hData, NULL, "SelectedLaunch", RRF_RT_REG_DWORD, NULL, &t, &sz);
 		lisMinecraftVersion->setSelIndex(t);
-		lisMinecraftVersionPrompt->hide();
+		labMinecraftVersionPrompt->hide();
 	}
 	else {
 		lisMinecraftVersion->hide();
@@ -205,20 +203,24 @@ int main() {
 	sz = 1024;
 	RegGetValue(hData, NULL, L"MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempW, &sz);
 	pageSettings = new RvG::Container(170, 25, 600, 400, x);
-	labSettingsDir = new RvG::Label(L"Minecraft Directory", 3, 5, 200, 20, pageSettings);
-	ediSettingsDir = new RvG::InputBox(tempW, 125, 0, 300, 25, pageSettings);
-	labSettingsSize = new RvG::Label(L"Minecraft Window Size", 3, 35, 200, 20, pageSettings);
+	new RvG::Label(L"Minecraft Directory", 3, 5, 200, 20, pageSettings);
+	ediSettingsDir = new RvG::InputBox(tempW, 150, 0, 300, 25, pageSettings);
+	new RvG::Label(L"Minecraft Window Size", 3, 35, 200, 20, pageSettings);
 	sz = 4;
 	RegGetValueA(hData, NULL, "WindowWidth", RRF_RT_REG_DWORD, NULL, &intSettingsWid, &sz);
-	ediSettingsWid = new RvG::InputBox(_itow(intSettingsWid, tempW, 10), 125, 30, 50, 25, pageSettings);
+	ediSettingsWid = new RvG::InputBox(_itow(intSettingsWid, tempW, 10), 150, 30, 50, 25, pageSettings);
+	new RvG::Label(L"x", 200, 35, 15, 20, pageSettings, SS_CENTER);
 	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &intSettingsHei, &sz);
-	ediSettingsHei = new RvG::InputBox(_itow(intSettingsHei, tempW, 10), 180, 30, 50, 25, pageSettings);
+	ediSettingsHei = new RvG::InputBox(_itow(intSettingsHei, tempW, 10), 215, 30, 50, 25, pageSettings);
 
 
 	// Page Minecraft BE
 	pageMinecraftBE = new RvG::Container(170, 25, 600, 400, x);
 	btnMinecraftBELaunch = new RvG::Button(L"Launch Bedrock", 0, 0, 161, 100, pageMinecraftBE);
 	btnMinecraftBELaunch->bindCommand([](HWND win, HWND btn)->int {
+		HANDLE hRead, hWrite;
+		STARTUPINFOA si;
+		PROCESS_INFORMATION pi;
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 		sa.lpSecurityDescriptor = NULL;
@@ -238,7 +240,7 @@ int main() {
 		si.wShowWindow = SW_HIDE;
 		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 		char tmpS[256];
-		strcpy(tmpS, "cmd /k start shell:appsfolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!app");
+		strcpy(tmpS, "cmd /c start shell:appsfolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!app");
 		if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
 			NULL, NULL, &si, &pi)) {
 			DWORD ret = GetLastError();
@@ -254,6 +256,9 @@ int main() {
 	});
 	btnMinecraftBEPreviewLaunch = new RvG::Button(L"Launch Preview", 161, 0, 161, 100, pageMinecraftBE);
 	btnMinecraftBEPreviewLaunch->bindCommand([](HWND win, HWND btn)->int {
+		HANDLE hRead, hWrite;
+		STARTUPINFOA si;
+		PROCESS_INFORMATION pi;
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 		sa.lpSecurityDescriptor = NULL;
@@ -273,7 +278,7 @@ int main() {
 		si.wShowWindow = SW_HIDE;
 		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 		char tmpS[256];
-		strcpy(tmpS, "cmd /k start shell:appsfolder\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe!app");
+		strcpy(tmpS, "cmd /c start shell:appsfolder\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe!app");
 		if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
 			NULL, NULL, &si, &pi)) {
 			DWORD ret = GetLastError();
@@ -310,10 +315,10 @@ int main() {
 			RegGetValueA(hData, NULL, "SelectedLaunch", RRF_RT_REG_DWORD, NULL, &t, &sz);
 			lisMinecraftVersion->setSelIndex(t);
 			lisMinecraftVersion->show();
-			lisMinecraftVersionPrompt->hide();
+			labMinecraftVersionPrompt->hide();
 		}
 		else {
-			lisMinecraftVersionPrompt->show();
+			labMinecraftVersionPrompt->show();
 			lisMinecraftVersion->hide();
 		}
 		return 0;

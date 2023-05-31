@@ -80,7 +80,7 @@ int writeLog(const char* logger, const char* format, ...) {
 		if (format[fori] == '%') {
 			switch (format[fori + 1]) {
 			case '%': {
-				printf("%%", i);
+				printf("%%");
 				fprintf(programmeLog, "%%");
 				fflush(programmeLog);
 				break;
