@@ -105,7 +105,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 			}
 			if (tmpI == 0) continue;	
 		}
-		strcpyf(libDir, "libraries\\%s", versionLib["path"].asCString());
+		strcpyf(libDir, "%slibraries\\%s", cwd, versionLib["path"].asCString());
 		for (int i = 0; i < strlen(libDir); i++) {
 			if (libDir[i] == '/') libDir[i] = '\\';
 		}
