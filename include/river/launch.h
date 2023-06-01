@@ -75,7 +75,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 				free(tmpC);
 				tmpC = NULL;
 				join(libNameSp, libDir, 1024, "\\");
-				strcpyf(tmpS, "libraries\\%s\\%s-%s.jar", libDir, libNameSp[1].asCString(), libNameSp[2].asCString());
+				strcpyf(tmpS, "%slibraries\\%s\\%s-%s.jar", cwd, libDir, libNameSp[1].asCString(), libNameSp[2].asCString());
 				for (int i = 0; i < strlen(libDir); i++) {
 					if (libDir[i] == '/') libDir[i] = '\\';
 				}
