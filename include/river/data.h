@@ -23,6 +23,19 @@ int initData() {
 		RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &t, 4);
 	
 	dwType = REG_SZ;
+	wchar_t fileDir[MAX_PATH + 1] = { 0 };
+	GetModuleFileName(NULL, fileDir, MAX_PATH);
+	for (int i = MAX_PATH; i > 0; i--) {
+		if (fileDir[i] == '\\') {
+			fileDir[i] = 0;
+			break;
+		}
+	}
+	char cwd[MAX_PATH + 1] = { 0 };
+	_getcwd(cwd, MAX_PATH);
+	RegSetKeyValueA(hData, NULL, "LauncherCwd", REG_SZ, cwd, strlen(cwd) + 1);
+	writeLog("Data", "%d", lstrlen(fileDir) + 1);
+	RegSetKeyValue(hData, NULL, L"LauncherPath", REG_SZ, fileDir, lstrlen(fileDir)*2+1);
 	if (RegQueryValueEx(hData, L"MinecraftDirectory", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "MinecraftDirectory", REG_SZ, "\0", 1);
 	if (RegQueryValueEx(hData, L"Accounts", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)

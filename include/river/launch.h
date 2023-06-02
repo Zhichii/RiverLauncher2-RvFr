@@ -149,7 +149,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	tmp.append(fvJar);
 	tmpC = (char*)malloc(6402);
 	join(tmp, tmpC, 6400, ";");
-	writeLog("launchInstance", tmpC);
+	writeLog("LaunchInstance", tmpC);
 
 	// Get Launch Level
 
@@ -157,7 +157,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	if (versionInfo.isMember("arguments")) level = 1;
 	else if (versionInfo.isMember("minecraftArguments")) level = 0;
 	else {
-		writeLog("launchInstance", "Unknow launch level. ");
+		writeLog("LaunchInstance", "Unknow launch level. ");
 		free(tmpC);
 		MessageBox(*x, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
 		return 0;
@@ -255,12 +255,123 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	}
 	jvmArgC = (char*)malloc(6402);
 	join(jvmArg, jvmArgC, 6400, " ");
+	int javaVersion = versionInfo["javaVersion"]["majorVersion"].asInt();
+	if (javaVersion > 8) javaVersion = 17;
+	char gottenJavaVersion[512];
 
-	// Get Javas //* Skipped
+	// Get Javas
+
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.lpSecurityDescriptor = NULL;
+	sa.bInheritHandle = TRUE;
+
+	if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+		DWORD ret = GetLastError();
+		return ret ? ret : -1;
+	}
+
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+
+	si.cb = sizeof(STARTUPINFO);
+	GetStartupInfoA(&si);
+	si.hStdError = hWrite;
+	si.hStdOutput = hWrite;
+	si.wShowWindow = SW_HIDE;
+	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+
+	strcpy(output, "cmd /c where java");
+	if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
+		NULL, cwd, &si, &pi)) {
+		DWORD ret = GetLastError();
+		CloseHandle(hRead);
+		CloseHandle(hWrite);
+		return ret ? ret : -1;
+	}
+
+	CloseHandle(hWrite);
+	Json::Value javas = Json::arrayValue;
+	char javasTemp[4098] = {};
+	char bufJava[512] = {};
+	DWORD bytesRead;
+	while (ReadFile(hRead, (char*)bufJava, 512, &bytesRead, NULL)) {
+		strcat(javasTemp, bufJava);
+		memset(bufJava, 0, MAX_PATH + 1);
+	}
+	valueSplit(javasTemp, "\r\n", &javas);
+	javas.removeIndex(javas.size() - 1, NULL);
+
+	CloseHandle(hRead);
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	// For Each to Get the Most Compatible Java
+
+	for (Json::Value java : javas) {
+
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.lpSecurityDescriptor = NULL;
+		sa.bInheritHandle = TRUE;
+
+		if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+			DWORD ret = GetLastError();
+			return ret ? ret : -1;
+		}
+
+		ZeroMemory(&si, sizeof(STARTUPINFO));
+
+		si.cb = sizeof(STARTUPINFO);
+		GetStartupInfoA(&si);
+		si.hStdError = hWrite;
+		si.hStdOutput = hWrite;
+		si.wShowWindow = SW_HIDE;
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+
+		strcpyf(output, "%s getJavaMainVersion", java.asCString());
+		if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
+			NULL, "RvL\\", &si, &pi)) {
+			MessageBoxA(*x, java.asCString(), "?", MB_OK | MB_ICONERROR);
+			DWORD ret = GetLastError();
+			CloseHandle(hRead);
+			CloseHandle(hWrite);
+			return ret ? ret : -1;
+		}
+
+		CloseHandle(hWrite);
+		char tmpEachJava[130] = {};
+		char bufEachJava[130] = {};
+		Json::Value javaInfo;
+		DWORD bytesRead;
+		while (ReadFile(hRead, tmpEachJava, 128, &bytesRead, NULL)) {
+			strcat(bufEachJava, tmpEachJava);
+			memset(tmpEachJava, 0, 130);
+		}
+		valueSplit(bufEachJava, "\r\n", &javaInfo);
+
+		CloseHandle(hRead);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		if (strcmp(javaInfo[1].asCString(), "64") != 0) continue;
+		writeLog(output, javaInfo[0].asCString());
+		int tar = 0;
+		if (strcmp(javaInfo[0].asCString(), "1.8") == 0) tar = 8;
+		else tar = atoi(javaInfo[0].asCString());
+		if (tar == javaVersion) {
+			strcpy(gottenJavaVersion, java.asCString());
+			int len = strlen(gottenJavaVersion);
+			gottenJavaVersion[len + 1] = 0;
+			gottenJavaVersion[len] = 'e';
+			gottenJavaVersion[len - 1] = 'x';
+			gottenJavaVersion[len - 2] = 'e';
+			gottenJavaVersion[len - 3] = '.';
+			gottenJavaVersion[len - 4] = 'w';
+			break;
+		}
+	}
 
 	// Write into output
 
-	strcpy(output, "javaw -Dminecraft.client.jar=");
+	strcpyf(output, "\"%s\" -Dminecraft.client.jar=", gottenJavaVersion);
 	strcatf(output, "versions\\%s\\%s.jar", versionId, versionId);
 	if (find(jvmArgC, "-Djava.library.path") == -1) {
 		strcatf(output, " -Djava.library.path=%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
@@ -320,7 +431,8 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	free(gameArgCReplaced);
 	int f = 0;
 
-	SECURITY_ATTRIBUTES sa;
+	// Launch
+
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
@@ -339,7 +451,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	si.wShowWindow = SW_SHOW;
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 
-	strcpyf(tmpS, "%sversions\\%s\\river_launch.bat", cwd, versionId);
+	strcpyf(tmpS, "%sversions\\%s\\RiverLaunch.bat", cwd, versionId);
 	FILE* outFile = fopen(tmpS, "w");
 	fprintf(outFile, "@echo off\ntitle Minecraft Log\ncd /d %s\n%s", cwd, output);
 	fclose(outFile);
@@ -348,20 +460,18 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 		DWORD ret = GetLastError();
 		CloseHandle(hRead);
 		CloseHandle(hWrite);
+		MessageBox(*x, L"?", L"?", MB_OK | MB_ICONERROR);
 		return ret ? ret : -1;
 	}
 
 	CloseHandle(hWrite);
 	char buf[4098];
-	DWORD bytesRead;
 	thread thr([&]()->int {
-		while (ReadFile(hRead, (char*)buf, 4096, (LPDWORD) &bytesRead, NULL)) {
+		while (ReadFile(hRead, (char*)buf, 4096, &bytesRead, NULL)) {
 			buf[strlen(buf)] = 0;
 			SetWindowTextA(edi->hWnd, buf);
 		}
 		SetWindowTextA(edi->hWnd, "Process ended! ");
-		DWORD exitCode = 0;
-		GetExitCodeProcess(pi.hProcess, &exitCode);
 		CloseHandle(hRead);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);

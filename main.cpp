@@ -2,12 +2,11 @@
 #include <river\defines.h>
 #include <river\launch.h>
 #include <river\data.h>
+#include <river\javaDownload.h>
 #include "resource.h"
 #include <SDKDDKVer.h>
 #include <Commctrl.h>
 #include <thread>
-using namespace std;
-using namespace requests;
 
 int btn1_i = 0;
 
@@ -54,6 +53,16 @@ char newStr[258];
 int main() {
 	RVG_START;
 	initData();
+	mkdir("RvL");
+	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_JAVACLASS1), L"javaclass");
+	//DebugBreak();
+	HGLOBAL IDR = LoadResource(NULL, hRsrc);
+	DWORD size = SizeofResource(NULL, hRsrc);
+	FILE* javaClass = fopen("RvL\\getJavaMainVersion.class", "wb");
+	fwrite(LockResource(IDR), sizeof(char), size, javaClass);
+	fclose(javaClass);
+	FreeResource(IDR);
+
 	x = new RvG::Window(L"RiverLauncher2", 0);
 	SendMessage(*x, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
 	SendMessage(*x, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
@@ -397,7 +406,7 @@ int main() {
 		try {
 			Response resp = Get("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
 			Json::Value versions;
-			reader.parse((resp).GetText(), versions);
+			reader.parse(resp.GetText(), versions);
 			char temp[64] = {};
 			sz = 64;
 			RegGetValueA(hData, NULL, "LatestKnown", RRF_RT_REG_SZ, NULL, temp, &sz);
@@ -410,9 +419,9 @@ int main() {
 			}
 		}
 		catch (const char* msg){
-			writeLog("Resp", msg);
-			return 0;
+			writeLog("Requesting", msg);
 		}
+		return 0;
 	});
 	thr2.detach();
 	x->keepResponding();

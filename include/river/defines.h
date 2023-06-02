@@ -24,9 +24,10 @@
 #define ALLOC 4096
 #define DEBUG_MODE 0
 using namespace std;
+using namespace requests;
 
 Json::Reader reader;
-FILE* programmeLog = fopen(".river_log.txt", "w");
+FILE* programmeLog = fopen("RvL\\Log.txt", "w");
 HKEY hData;
 DWORD sz = 4;
 Json::Value accounts = Json::arrayValue;
@@ -406,5 +407,29 @@ char* strcatf(char* dst, const char* srcFormat, ...) {
 }
 
 int findFile(const char* fileEnding) {
+	return 0;
+}
+
+int reqGetBinary(const char* url, BYTE* output, int* size) {
+	try {
+		Response resp = Get(url);
+		memcpy(output, resp.GetBinary(), resp.size());
+		if (size != nullptr) *size = resp.size();
+	}
+	catch (const char* error) {
+		writeLog("ReqGetBinary", error);
+	}
+	return 0;
+}
+
+int reqGetString(const char* url, char* output, int* size) {
+	try {
+		Response resp = Get(url);
+		memcpy(output, resp.GetText().c_str(), resp.size());
+		if (size != nullptr) *size = resp.size();
+	}
+	catch (const char* error) {
+		writeLog("ReqGetString", error);
+	}
 	return 0;
 }
