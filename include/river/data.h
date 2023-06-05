@@ -44,3 +44,19 @@ int initData() {
 		RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, "\0", 1);
 	return 0;
 }
+
+void* memResource(long id, DWORD* size) {
+	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(id), L"javaclass");
+	HGLOBAL IDR = LoadResource(NULL, hRsrc);
+	*size = SizeofResource(NULL, hRsrc);
+	return LockResource(IDR);
+}
+
+int freeResource(HGLOBAL IDR) {
+	FreeResource(IDR);
+}
+
+wchar_t* loadString(int id, wchar_t* buf = loadStringBuf) {
+	LoadString(NULL, id, buf, 256);
+	return buf;
+}

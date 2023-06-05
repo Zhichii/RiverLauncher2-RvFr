@@ -256,7 +256,10 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	jvmArgC = (char*)malloc(6402);
 	join(jvmArg, jvmArgC, 6400, " ");
 	int javaVersion = versionInfo["javaVersion"]["majorVersion"].asInt();
-	if (javaVersion > 8) javaVersion = 17;
+	if (javaVersion > 11) javaVersion = 17;
+	else if (javaVersion == 11) javaVersion = 8;
+	else if (javaVersion <= 11) javaVersion = 8;
+	else javaVersion = 17;
 	char gottenJavaVersion[512];
 
 	// Get Javas
@@ -397,11 +400,11 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	replace(6400, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
 	replace(6400, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
 	replace(6400, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
-	replace(6400, gameArgCReplaced, gameArgC, "${auth_uuid}", "${auth_uuid}"); //* Hey
-	replace(6400, gameArgC, gameArgCReplaced, "${auth_access_token}", "${auth_access_token}"); //* Hey
-	replace(6400, gameArgCReplaced, gameArgC, "${auth_session}", "${auth_session}"); //* Hey
-	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", "legacy"); //* Hey
-	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", "${clientId}"); //* Hey
+	replace(6400, gameArgCReplaced, gameArgC, "${auth_uuid}", accounts[intAccountsSel]["userId"].asCString());
+	replace(6400, gameArgC, gameArgCReplaced, "${auth_access_token}", accounts[intAccountsSel]["userToken"].asCString());
+	replace(6400, gameArgCReplaced, gameArgC, "${auth_session}", accounts[intAccountsSel]["userToken"].asCString());
+	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", (accounts[intAccountsSel]["usrType"].asInt() == 0)? ("legacy") : ("mojang"));
+	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", accounts[intAccountsSel]["userId"].asCString());
 	replace(6400, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
 	int wid = intSettingsWid, hei = intSettingsHei;
 	char temp[20];
@@ -430,6 +433,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	free(jvmArgC);
 	free(gameArgCReplaced);
 	int f = 0;
+	DWORD rec;
 
 	// Launch
 
@@ -460,7 +464,8 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 		DWORD ret = GetLastError();
 		CloseHandle(hRead);
 		CloseHandle(hWrite);
-		MessageBox(*x, L"?", L"?", MB_OK | MB_ICONERROR);
+		MessageBox(*x, L"xxx", L"?", MB_OK | MB_ICONERROR);
+		writeLog("xxx", "%d", ret);
 		return ret ? ret : -1;
 	}
 

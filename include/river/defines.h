@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <HttpRequests.hpp>
 #include <filesystem>
 #include <urlmon.h>
 #include <ctime>
@@ -20,12 +21,14 @@
 #include <json/json.h>
 #include <zip/unzip.h>
 #include <requests/requests.h>
+#include <river/ui.h>
 #define INT_MAX 2147483647
 #define ALLOC 4096
 #define DEBUG_MODE 0
 using namespace std;
 using namespace requests;
 
+wchar_t loadStringBuf[258];
 Json::Reader reader;
 FILE* programmeLog = fopen("RvL\\Log.txt", "w");
 HKEY hData;
@@ -35,7 +38,8 @@ int intAccountsSel = 0;
 int intSettingsWid;
 int intSettingsHei;
 
-RvG::InputBox* inpDialogUsername;
+char baseStr[258];
+char newStr[258];
 
 
 HANDLE hRead, hWrite;
@@ -65,7 +69,7 @@ int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to =
 	return 0;
 }
 
-// %% means "%". %d means "long long". %s means "char*". %c means "char". 
+// %% means "%". %d means "int". %l means "long long". %s means "char*". %c means "char". 
 int writeLog(const char* logger, const char* format, ...) {
 	if (programmeLog == nullptr) return 1;
 	char str[256];
@@ -297,7 +301,7 @@ int sp(char* str, int strSize, const char* a, const char* b, char* output) {
 	return 0;
 }
 
-// %% means "%". %d means "long long". %s means "char*". %c means "char". 
+// %% means "%". %d means "int". %l means "long long". %s means "char*". %c means "char". 
 char* strcpyf(char* dst, const char* srcFormat, ...) {
 	char tmp[258];
 	strcpy(dst, "\0");
@@ -352,7 +356,7 @@ char* strcpyf(char* dst, const char* srcFormat, ...) {
 	return dst;
 }
 
-// %% means "%". %d means "long long". %s means "char*". %c means "char". 
+// %% means "%". %d means "int". %l means "long long". %s means "char*". %c means "char". 
 char* strcatf(char* dst, const char* srcFormat, ...) {
 	char tmp[258];
 	va_list args;

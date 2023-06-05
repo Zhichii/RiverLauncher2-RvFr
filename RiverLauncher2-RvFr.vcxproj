@@ -71,10 +71,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);include;</IncludePath>
+    <IncludePath>$(VC_IncludePath);include;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);include;</IncludePath>
+    <IncludePath>$(VC_IncludePath);include;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -115,7 +115,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);H:\RiverGuiFrame\x64\Release\RiverGuiFrame.lib;libs\Requests.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);H:\RiverGuiFrame\x64\Release\RiverGuiFrame.lib;libs\Requests.lib;ws2_32.lib</AdditionalDependencies>
       <NoEntryPoint>false</NoEntryPoint>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -137,7 +137,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);H:\RiverGuiFrame\x64\Release\RiverGuiFrame.lib;libs\Requests.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);H:\RiverGuiFrame\x64\Release\RiverGuiFrame.lib;libs\Requests.lib;ws2_32.lib</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -147,10 +147,12 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\river\accounts.h" />
     <ClInclude Include="include\river\data.h" />
     <ClInclude Include="include\river\defines.h" />
     <ClInclude Include="include\river\javaDownload.h" />
     <ClInclude Include="include\river\launch.h" />
+    <ClInclude Include="include\river\ui.h" />
     <ClInclude Include="include\zip\unzip.h" />
     <ClInclude Include="include\zip\zip.h" />
     <ClInclude Include="resource.h" />

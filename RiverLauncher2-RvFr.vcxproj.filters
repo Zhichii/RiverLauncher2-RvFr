@@ -47,6 +47,12 @@
     <ClInclude Include="include\river\javaDownload.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\river\accounts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\river\ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
