@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdio.h>
-#include <HttpRequests.hpp>
 #include <filesystem>
 #include <urlmon.h>
 #include <ctime>
@@ -28,7 +27,7 @@
 using namespace std;
 using namespace requests;
 
-wchar_t loadStringBuf[258];
+char loadStringBuf[258];
 Json::Reader reader;
 FILE* programmeLog = fopen("RvL\\Log.txt", "w");
 HKEY hData;
@@ -37,6 +36,10 @@ Json::Value accounts = Json::arrayValue;
 int intAccountsSel = 0;
 int intSettingsWid;
 int intSettingsHei;
+RvG::Window* minecraftLog;
+RvG::Label* staticLab;
+RvG::Button* staticBtn;
+Json::Value versionManifest = Json::arrayValue;
 
 char baseStr[258];
 char newStr[258];

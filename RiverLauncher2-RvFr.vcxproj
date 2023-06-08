@@ -111,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze:stacksize 32768 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,6 +132,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/analyze:stacksize 32768 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -150,6 +152,7 @@
     <ClInclude Include="include\river\accounts.h" />
     <ClInclude Include="include\river\data.h" />
     <ClInclude Include="include\river\defines.h" />
+    <ClInclude Include="include\river\download.h" />
     <ClInclude Include="include\river\javaDownload.h" />
     <ClInclude Include="include\river\launch.h" />
     <ClInclude Include="include\river\ui.h" />

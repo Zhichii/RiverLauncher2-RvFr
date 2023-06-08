@@ -3,18 +3,22 @@
 
 RvG::Window* x;
 RvG::Container* curPage;
+bool hasPage2 = 0;
+RvG::Container* curPage2;
 RvG::Button* btnLaunch;
 
 RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;
 RvG::Button* btnMinecraftEnd;
-RvG::Label* labMinecraftLog;
 RvG::Label* labMinecraftVersionPrompt;
 RvG::ListBox* lisMinecraftVersion;
 int intMinecraftSel = 0;
 
 RvG::Button* swiMinecraftDownloads;
 RvG::Container* pageMinecraftDownloads;
+RvG::Button* btnMinecraftDownloads;
+RvG::ListBox* lisMinecraftDownloads;
+RvG::Label* labMinecraftDownloadsPrompt;
 
 RvG::Button* swiAccounts;
 RvG::Container* pageAccounts;

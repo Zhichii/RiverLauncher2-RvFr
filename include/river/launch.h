@@ -2,7 +2,7 @@
 
 #include <river/defines.h>
 
-int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG::Window* x) {
+int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	
 	// Prepare
 
@@ -22,7 +22,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
 	if (accounts.size() == 0) {
-		MessageBox(*x, L"No accounts created! ", L"Error", MB_OK | MB_ICONERROR);
+		MessageBoxA(*x, "No accounts created! ", "Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
 
@@ -36,7 +36,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	char theVersion[1026];
 	Json::Value versionLib;
 	Json::Value libNameSp;
-	char libDir[1026];
+	char libDir[514];
 	char tmpS[1026];
 	char* tmpC = NULL;
 	char* tmpC2 = NULL;
@@ -74,7 +74,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 				libNameSp[0] = tmpC;
 				free(tmpC);
 				tmpC = NULL;
-				join(libNameSp, libDir, 1024, "\\");
+				join(libNameSp, libDir, 512, "\\");
 				strcpyf(tmpS, "libraries\\%s\\%s-%s.jar", libDir, libNameSp[1].asCString(), libNameSp[2].asCString());
 				for (int i = 0; i < strlen(libDir); i++) {
 					if (libDir[i] == '/') libDir[i] = '\\';
@@ -110,22 +110,22 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 			if (libDir[i] == '/') libDir[i] = '\\';
 		}
 		if (i.isMember("natives")) {
-			char nativeTmp[1026] = {};
+			char nativeTmp[130] = {};
 			strcpyf(nativeTmp, "%slibraries\\%s", cwd, versionLib["path"].asCString());
-			for (int i = 0; i < 1024; i++) {
+			for (int i = 0; i < 130; i++) {
 				if (nativeTmp[i] == 0) break;
 				if (nativeTmp[i] == '/') nativeTmp[i] = '\\';
 			}
-			wchar_t nativeTmpW[1026] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 1024);
+			wchar_t nativeTmpW[130] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 128);
 			HZIP hZip = OpenZip(nativeTmpW, NULL);
 			ZIPENTRY ze;
 			GetZipItem(hZip, -1, &ze);
 			int nums = ze.index;
-			char nativeLatestA[1026] = {};
+			char nativeLatestA[130] = {};
 			strcpyf(nativeLatestA, "%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
-			wchar_t nativeLatestW[1026] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 1024);
+			wchar_t nativeLatestW[130] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 128);
 			SetUnzipBaseDir(hZip, nativeLatestW);
 			for (int i = 0; i < nums; i++) {
 				GetZipItem(hZip, i, &ze);
@@ -159,7 +159,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	else {
 		writeLog("LaunchInstance", "Unknow launch level. ");
 		free(tmpC);
-		MessageBox(*x, L"Unable to launch! ", L"Error", MB_OK | MB_ICONERROR);
+		MessageBoxA(*x, "Unable to launch! ", "Error", MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	libraries.empty();
@@ -171,8 +171,9 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 	char* gameArgC = NULL;
 	Json::Value jvmArg;
 	char* jvmArgC = NULL;
+	int gameArgCLen = 1600;
 	if (level == 0) {
-		gameArgC = (char*)malloc(strlen(versionInfo["minecraftArguments"].asCString())+2);
+		gameArgC = (char*)malloc(1602);
 		strcpy(gameArgC, versionInfo["minecraftArguments"].asCString());
 		jvmArg.clear();
 		jvmArg.append("-cp");
@@ -200,8 +201,8 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 				}
 			}
 		}
-		gameArgC = (char*)malloc(6402);
-		join(gameArg, gameArgC, 6400, " ");
+		gameArgC = (char*)malloc(1602);
+		join(gameArg, gameArgC, 1600, " ");
 		jvmArg.clear();
 		for (Json::Value i : versionInfo["arguments"]["jvm"]) {
 			if (i.isString()) {
@@ -390,34 +391,34 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 			strcatf(output, " %s", loggingTmp2);
 		}
 	}
-	char* gameArgCReplaced = (char*)malloc(6402);
+	char* gameArgCReplaced = (char*)malloc(gameArgCLen+2);
 	if (find(gameArgC, " --tweakClass optifine.OptiFineForgeTweaker") != -1) {
-		replace(6400, gameArgC, gameArgCReplaced, " --tweakClass optifine.OptiFineForgeTweaker", "");
+		replace(gameArgCLen, gameArgC, gameArgCReplaced, " --tweakClass optifine.OptiFineForgeTweaker", "");
 		strcpyf(gameArgC, "%s --tweakClass optifine.OptiFineForgeTweaker", gameArgCReplaced);
 	}
-	replace(6400, gameArgC, gameArgCReplaced, "${auth_player_name}", accounts[intAccountsSel]["userName"].asCString());
-	replace(6400, gameArgCReplaced, gameArgC, "${version_name}", versionId);
-	replace(6400, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
-	replace(6400, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
-	replace(6400, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
-	replace(6400, gameArgCReplaced, gameArgC, "${auth_uuid}", accounts[intAccountsSel]["userId"].asCString());
-	replace(6400, gameArgC, gameArgCReplaced, "${auth_access_token}", accounts[intAccountsSel]["userToken"].asCString());
-	replace(6400, gameArgCReplaced, gameArgC, "${auth_session}", accounts[intAccountsSel]["userToken"].asCString());
-	replace(6400, gameArgC, gameArgCReplaced, "${user_type}", (accounts[intAccountsSel]["usrType"].asInt() == 0)? ("legacy") : ("mojang"));
-	replace(6400, gameArgCReplaced, gameArgC, "${clientId}", accounts[intAccountsSel]["userId"].asCString());
-	replace(6400, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${auth_player_name}", accounts[intAccountsSel]["userName"].asCString());
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${version_name}", versionId);
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${game_directory}", cwd);
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${assets_root}", "assets\\");
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${assets_index_name}", versionInfo["assets"].asCString());
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${auth_uuid}", accounts[intAccountsSel]["userId"].asCString());
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${auth_access_token}", accounts[intAccountsSel]["userToken"].asCString());
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${auth_session}", accounts[intAccountsSel]["userToken"].asCString());
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${user_type}", (accounts[intAccountsSel]["usrType"].asInt() == 0)? ("legacy") : ("mojang"));
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${clientId}", accounts[intAccountsSel]["userId"].asCString());
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${version_type}", versionInfo["type"].asCString());
 	int wid = intSettingsWid, hei = intSettingsHei;
 	char temp[20];
-	replace(6400, gameArgCReplaced, gameArgC, "${resolution_width}", itoa(wid, temp, 10));
-	replace(6400, gameArgC, gameArgCReplaced, "${resolution_height}", itoa(hei, temp, 10));
-	char latest[256];
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${resolution_width}", itoa(wid, temp, 10));
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${resolution_height}", itoa(hei, temp, 10));
+	char latest[128];
 	strcpyf(latest, "versions\\%s\\%s-natives\\", versionId, versionId);
-	replace(6400, gameArgCReplaced, gameArgC, "${natives_directory}", latest);
-	replace(6400, gameArgCReplaced, gameArgC, "${user_properties}", "{}");
-	replace(6400, gameArgC, gameArgCReplaced, "${client_id}", "00000000402b5328");
-	replace(6400, gameArgCReplaced, gameArgC, "${classpath_separator}", ";");
-	replace(6400, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
-	char* jvmArgCReplaced = (char*)malloc(6402);
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${natives_directory}", latest);
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${user_properties}", "{}");
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${client_id}", "00000000402b5328");
+	replace(gameArgCLen, gameArgCReplaced, gameArgC, "${classpath_separator}", ";");
+	replace(gameArgCLen, gameArgC, gameArgCReplaced, "${library_directory}", "libraries\\");
+	char* jvmArgCReplaced = (char*)malloc(6400);
 	replace(6400, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
 	replace(6400, jvmArgCReplaced, jvmArgC, "${natives_directory}", latest);
 	free(jvmArgCReplaced);
@@ -430,8 +431,8 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 
 	free(tmpC);
 	free(gameArgC);
-	free(jvmArgC);
 	free(gameArgCReplaced);
+	free(jvmArgC);
 	int f = 0;
 	DWORD rec;
 
@@ -464,23 +465,36 @@ int launchInstance(const char* versionId, const char* dir, RvG::Label* edi, RvG:
 		DWORD ret = GetLastError();
 		CloseHandle(hRead);
 		CloseHandle(hWrite);
-		MessageBox(*x, L"xxx", L"?", MB_OK | MB_ICONERROR);
-		writeLog("xxx", "%d", ret);
 		return ret ? ret : -1;
 	}
 
 	CloseHandle(hWrite);
+
+	// Create dia'log'
+
 	char buf[4098];
-	thread thr([&]()->int {
+	RvG::Label* edi;
+	thread thr2([&, buf] {
+		minecraftLog = new RvG::Window("Minecraft Log", 1, CW_USEDEFAULT, CW_USEDEFAULT, 650, 450);
+		edi = new RvG::Label("The log will show here", 25, 25, 600, 400, minecraftLog, WS_BORDER);
+		minecraftLog->keepResponding();
+		minecraftLog = nullptr;
+		});
+	thr2.detach();
+	thread thr([&, buf] {
 		while (ReadFile(hRead, (char*)buf, 4096, &bytesRead, NULL)) {
-			buf[strlen(buf)] = 0;
-			SetWindowTextA(edi->hWnd, buf);
+			if (minecraftLog != nullptr) {
+				SetWindowTextA(edi->hWnd, buf);
+				UpdateWindow(minecraftLog->hWnd);
+			}
 		}
-		SetWindowTextA(edi->hWnd, "Process ended! ");
+		if (minecraftLog != nullptr) {
+			SetWindowTextA(edi->hWnd, "Process ended! ");
+			UpdateWindow(minecraftLog->hWnd);
+		}
 		CloseHandle(hRead);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
-		return 0;
 	});
 	thr.detach();
 	return 0;

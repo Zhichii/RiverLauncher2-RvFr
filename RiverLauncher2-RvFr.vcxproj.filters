@@ -53,6 +53,9 @@
     <ClInclude Include="include\river\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\river\download.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

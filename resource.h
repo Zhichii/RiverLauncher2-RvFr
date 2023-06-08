@@ -12,6 +12,7 @@
 #define swi_mods                        108
 #define swi_mcbe                        109
 #define btn_minecraft_end               110
+#define btn_minecraft_download          111
 
 // Next default values for new objects
 // 

@@ -56,7 +56,7 @@ int freeResource(HGLOBAL IDR) {
 	FreeResource(IDR);
 }
 
-wchar_t* loadString(int id, wchar_t* buf = loadStringBuf) {
-	LoadString(NULL, id, buf, 256);
+char* loadString(int id, char* buf = loadStringBuf) {
+	LoadStringA(NULL, id, buf, 256);
 	return buf;
 }
