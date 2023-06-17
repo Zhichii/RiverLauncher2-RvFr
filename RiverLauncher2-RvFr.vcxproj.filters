@@ -77,5 +77,6 @@
     <None Include="getJavaMainVersion.class">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="lang\zh_cn.json" />
   </ItemGroup>
 </Project>

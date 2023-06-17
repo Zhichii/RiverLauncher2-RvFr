@@ -6,6 +6,7 @@ RvG::Container* curPage;
 bool hasPage2 = 0;
 RvG::Container* curPage2;
 RvG::Button* btnLaunch;
+RvG::ProgressBar* pgbDownload;
 
 RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;

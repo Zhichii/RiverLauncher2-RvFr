@@ -42,21 +42,11 @@ int initData() {
 		RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, "[]\0", 3);
 	if (RegQueryValueEx(hData, L"LatestKnown", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, "\0", 1);
-	return 0;
-}
-
-void* memResource(long id, DWORD* size) {
-	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(id), L"javaclass");
+	
+	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_LANG1), L"lang");
 	HGLOBAL IDR = LoadResource(NULL, hRsrc);
-	*size = SizeofResource(NULL, hRsrc);
-	return LockResource(IDR);
-}
-
-int freeResource(HGLOBAL IDR) {
+	DWORD size = SizeofResource(NULL, hRsrc);
+	reader.parse((const char*)LockResource(IDR), RvG::lang);
 	FreeResource(IDR);
-}
-
-char* loadString(int id, char* buf = loadStringBuf) {
-	LoadStringA(NULL, id, buf, 256);
-	return buf;
+	return 0;
 }

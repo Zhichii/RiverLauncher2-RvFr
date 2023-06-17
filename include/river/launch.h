@@ -6,6 +6,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	
 	// Prepare
 
+	pgbDownload->set(0);
 	struct _stat fileStat;
 	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
 	else return 1;
@@ -45,6 +46,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	if (output == nullptr) {
 		return 1;
 	}
+	pgbDownload->add(10);
 
 	// Libraries
 
@@ -150,6 +152,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	tmpC = (char*)malloc(6402);
 	join(tmp, tmpC, 6400, ";");
 	writeLog("LaunchInstance", tmpC);
+	pgbDownload->add(40);
 
 	// Get Launch Level
 
@@ -166,6 +169,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	tmp.empty();
 	versionLib.empty();
 	libNameSp.empty();
+	pgbDownload->add(10);
 
 	Json::Value gameArg;
 	char* gameArgC = NULL;
@@ -191,13 +195,20 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 				else gameArg.append(i);
 			}
 			else {
+				tmp = i["rules"][0]["features"];
+				if (!i.isMember("has_custom_resolution")) continue;
 				tmp = i["value"];
-				for (Json::Value j : tmp) {
-					if (find(j.asCString(), " ") != -1) {
-						strcpyf(tmpS, "\"%s\"", j.asCString());
-						gameArg.append(tmpS);
+				if (tmp.isString()) {
+					gameArg.append(tmp);
+				}
+				else {
+					for (Json::Value j : tmp) {
+						if (find(j.asCString(), " ") != -1) {
+							strcpyf(tmpS, "\"%s\"", j.asCString());
+							gameArg.append(tmpS);
+						}
+						else gameArg.append(j);
 					}
-					else gameArg.append(j);
 				}
 			}
 		}
@@ -262,6 +273,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	else if (javaVersion <= 11) javaVersion = 8;
 	else javaVersion = 17;
 	char gottenJavaVersion[512];
+	pgbDownload->add(10);
 
 	// Get Javas
 
@@ -372,6 +384,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 			break;
 		}
 	}
+	pgbDownload->add(20);
 
 	// Write into output
 
@@ -386,7 +399,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	if (versionInfo.isMember("logging")) {
 		if (versionInfo["logging"].isMember("client")) {
 			strcpy(loggingTmp, versionInfo["logging"]["client"]["argument"].asCString());
-			strcpyf(loggingTmp3, "%sversions\\%s\\", cwd, versionId, versionInfo["logging"]["client"]["file"]["id"].asCString());
+			strcpyf(loggingTmp3, "%sversions\\%s\\%s", cwd, versionId, versionInfo["logging"]["client"]["file"]["id"].asCString());
 			replace(256, loggingTmp, loggingTmp2, "${path}", loggingTmp3);
 			strcatf(output, " %s", loggingTmp2);
 		}
@@ -421,6 +434,8 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	char* jvmArgCReplaced = (char*)malloc(6400);
 	replace(6400, jvmArgC, jvmArgCReplaced, "${classpath}", tmpC);
 	replace(6400, jvmArgCReplaced, jvmArgC, "${natives_directory}", latest);
+	replace(6400, jvmArgC, jvmArgCReplaced, "${launcher_name}", "RiverLauncher2");
+	replace(6400, jvmArgCReplaced, jvmArgC, "${launcher_version}", "2.0.0.0");
 	free(jvmArgCReplaced);
 	strcatf(output, " %s %s %s", jvmArgC, versionInfo["mainClass"].asCString(), gameArgCReplaced);
 	if (find(gameArgC, "--width") == -1) {
@@ -435,6 +450,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	free(jvmArgC);
 	int f = 0;
 	DWORD rec;
+	pgbDownload->add(10);
 
 	// Launch
 
@@ -469,6 +485,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	}
 
 	CloseHandle(hWrite);
+	pgbDownload->set(100);
 
 	// Create dia'log'
 

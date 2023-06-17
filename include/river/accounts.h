@@ -108,10 +108,8 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			//dialog->respond();
 			new RvG::Label(L"Getting informations from your Microsoft account... (0/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
-
+			
 			// Get Username and token
 
 			char tmpString[256];
@@ -122,6 +120,7 @@ int addOfficialAcc(HWND win, HWND btn) {
 			// Step 1
 			Response resp = Get(url);
 			reader.parse(resp.GetText(), temp);
+			strcpyf(url, "{\"Properties\":{\"AuthMethod\":\"RPS\", \"SiteName\":\"user.auth.xboxlive.com\", \"RpsTicket\":\"d=%s\"}, \"RelyingParty\":\"http://auth.xboxlive.com\", \"TokenType\":\"JWT\"}", temp["access_token"].asCString());
 			char refreshToken[128];
 			strcpy(refreshToken, temp["refresh_token"].asCString());
 			for (RvG::ParentWidget* i : dialog->children) {
@@ -129,32 +128,28 @@ int addOfficialAcc(HWND win, HWND btn) {
 				i->remove();
 			}
 			new RvG::Label(L"Getting informations from your Microsoft account... (1/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
-
+			
 			// Step 2
-			strcpyf(url, "{\"Properties\":{\"AuthMethod\":\"RPS\", \"SiteName\":\"user.auth.xboxlive.com\", \"RpsTicket\":\"d=%s\"}, \"RelyingParty\":\"http://auth.xboxlive.com\", \"TokenType\":\"JWT\"}", temp["access_token"].asCString());
 			resp = Post("https://user.auth.xboxlive.com/user/authenticate", string(url));
 			reader.parse(resp.GetText(), temp);
+			strcpyf(url, "{\"Properties\":{\"SandboxId\":\"RETAIL\", \"UserTokens\":[\"%s\"]}, \"RelyingParty\":\"rp://api.minecraftservices.com/\", \"TokenType\":\"JWT\"}", temp["Token"].asCString());
 			for (RvG::ParentWidget* i : dialog->children) {
 				if (i == nullptr) break;
 				i->remove();
 			}
 			new RvG::Label(L"Getting informations from your Microsoft account... (2/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
-
+			
 			// Step 3
-			strcpyf(url, "{\"Properties\":{\"SandboxId\":\"RETAIL\", \"UserTokens\":[\"%s\"]}, \"RelyingParty\":\"rp://api.minecraftservices.com/\", \"TokenType\":\"JWT\"}", temp["Token"].asCString());
 			resp = Post("https://xsts.auth.xboxlive.com/xsts/authorize", string(url));
 			reader.parse(resp.GetText(), temp);
+			strcpyf(url, "{\"identityToken\":\"XBL3.0 x=%s;%s\"}", temp["DisplayClaims"]["xui"][0]["uhs"].asCString(), temp["Token"].asCString());
 			for (RvG::ParentWidget* i : dialog->children) {
 				if (i == nullptr) break;
 				i->remove();
 			}
 			new RvG::Label(L"Getting informations from your Microsoft account... (3/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
 
 			// Step 4
-			strcpyf(url, "{\"identityToken\":\"XBL3.0 x=%s;%s\"}", temp["DisplayClaims"]["xui"][0]["uhs"].asCString(), temp["Token"].asCString());
 			resp = Post("https://api.minecraftservices.com/authentication/login_with_xbox", string(url));
 			reader.parse(resp.GetText(), temp);
 			for (RvG::ParentWidget* i : dialog->children) {
@@ -162,8 +157,7 @@ int addOfficialAcc(HWND win, HWND btn) {
 				i->remove();
 			}
 			new RvG::Label(L"Getting informations from your Microsoft account... (4/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
-
+			
 			// Has Minecraft? 
 			map<string, string> headers;
 			headers["Authorization"] = "Bearer " + temp["access_token"].asString();
@@ -185,7 +179,6 @@ int addOfficialAcc(HWND win, HWND btn) {
 				i->remove();
 			}
 			new RvG::Label(L"Getting informations from your Microsoft account... (5/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			//dialog->respond();
 
 			// Step 5
 			resp = Get("https://api.minecraftservices.com/minecraft/profile", headers);
@@ -197,14 +190,18 @@ int addOfficialAcc(HWND win, HWND btn) {
 			new RvG::Label(L"Getting informations from your Microsoft account... (6/6)", 0, 75, 700, 20, dialog, SS_CENTER);
 			// Check re-add
 			bool readd = 0;
-			for (Json::Value i : accounts) {
-				if (strcmp(i["userName"].asCString(), x["name"].asCString()) == 0)
-					if (i["userType"].asInt() == 1) {
-						i["userId"] = x["id"];
-						i["userToken"] = temp["access_token"];
-						i["userSkin"] = x["skins"][0]["url"];
-						i["userSkinId"] = x["skins"][0]["id"];
-						i["userCapes"] = Json::arrayValue;
+			for (int i = 0; i < accounts.size(); i ++) {
+				if (strcmp(accounts[i]["userName"].asCString(), x["name"].asCString()) == 0)
+					if (accounts[i]["userType"].asInt() == 1) {
+						accounts[i]["userId"] = x["id"].asCString();
+						writeLog("???", "%s\n%s", accounts[i]["userToken"].asCString(), temp["access_token"].asCString());
+						accounts[i]["userToken"] = temp["access_token"].asCString();
+						accounts[i]["userSkin"] = x["skins"][0]["url"].asCString();
+						accounts[i]["userSkinId"] = x["skins"][0]["id"].asCString();
+						accounts[i]["userCapes"] = Json::arrayValue;
+						Json::FastWriter writer;
+						string s = writer.write(accounts);
+						RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, s.c_str(), s.size() + 1);
 						readd = 1;
 						break;
 					}

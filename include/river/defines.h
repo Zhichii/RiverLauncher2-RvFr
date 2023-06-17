@@ -14,13 +14,13 @@
 #include <thread>
 #include <sys/stat.h>
 #include <cstdarg>
-#include <json/json_reader.cpp>
-#include <json/json_writer.cpp>
-#include <json/json_value.cpp>
-#include <json/json.h>
 #include <zip/unzip.h>
 #include <requests/requests.h>
+#include <json/json.h> // The GuiFrame has already compiled JsonCpp into .lib, so do not include the cpp files
 #include <river/ui.h>
+#include <mutex>
+#include <ImageHlp.h>
+#include "resource.h"
 #define INT_MAX 2147483647
 #define ALLOC 4096
 #define DEBUG_MODE 0
@@ -48,6 +48,8 @@ char newStr[258];
 HANDLE hRead, hWrite;
 STARTUPINFOA si;
 PROCESS_INFORMATION pi;
+int libraries = 0;
+std::mutex mtx;
 
 /*
  * Minecraft [Download]
@@ -55,22 +57,6 @@ PROCESS_INFORMATION pi;
  * Settings
  * Connect [Create new rooms]
  */
-
-int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to = 0, int step = 1) {
-	if (from == to) to = strlen(baseStr) - 1;
-	if (from < 0) from = strlen(baseStr) + from;
-	if (to < 0) to = strlen(baseStr) + to;
-	if (step == 0) step = 1;
-	strcpy(newStr, "\0");
-
-	int cur = 0;
-	for (int i = from; (from < to) ? (i < to) : (i > to); i += step) {
-		newStr[cur++] = baseStr[i];
-	}
-	newStr[cur] = 0;
-
-	return 0;
-}
 
 // %% means "%". %d means "int". %l means "long long". %s means "char*". %c means "char". 
 int writeLog(const char* logger, const char* format, ...) {
@@ -136,6 +122,24 @@ int writeLog(const char* logger, const char* format, ...) {
 	va_end(args);
 	fprintf(programmeLog, "\n");
 	fflush(programmeLog);
+	return 0;
+}
+
+int split(const char* baseStr, char* newStr, int newSize, int from = 0, int to = 0, int step = 1) {
+	if (from == to) to = strlen(baseStr) - to;
+	if (from < 0) from = strlen(baseStr) + from;
+	if (to < 0) to = strlen(baseStr) + to;
+	if (step == 0) step = 1;
+	if (from > to) step = -step;
+	strcpy(newStr, "\0");
+	if (to > newSize) to = strlen(baseStr);
+
+	int cur = 0;
+	for (int i = from; (from < to) ? (i < to) : (i > to); i += step) {
+		newStr[cur++] = baseStr[i];
+	}
+	newStr[cur] = 0;
+
 	return 0;
 }
 
@@ -289,17 +293,23 @@ int writeFile(FILE* stream, const char* str) {
 	return 0;
 }
 
-int sp(char* str, int strSize, const char* a, const char* b, char* output) {
+int sp(const char* str, int strSize, const char* a, const char* b, char* output) {
 	strcpy(output, "\0");
-	int aPos = find(str, a);
-	if (DEBUG_MODE) writeLog("sp", "%d", aPos);
-	if (aPos == -1) return 1;
 	char* tmp = (char*)malloc(strSize + 2);
-	split(str, tmp, strSize, aPos + strlen(a), strlen(str));
-	int bPos = find(tmp, b);
-	if (DEBUG_MODE) writeLog("sp", "%d", bPos);
-	if (bPos == -1) return 1;
+
+	int aPos = 0;
+	int lenA = 0;
+	if (a != nullptr) {
+		aPos = find(str, a);
+		lenA = strlen(a);
+	}
+	if (aPos == -1) split(str, tmp, strSize, 0, strlen(str));
+	else split(str, tmp, strSize, aPos + lenA, strlen(str));
+
+	int bPos = strSize + 8;
+	if (b != nullptr) bPos = find(tmp, b);
 	split(tmp, output, strSize, 0, bPos);
+
 	free(tmp);
 	return 0;
 }
@@ -439,4 +449,94 @@ int reqGetString(const char* url, char* output, int* size) {
 		writeLog("ReqGetString", error);
 	}
 	return 0;
+}
+
+int winGetHttps(char** out, const char* url, int* oSize) {
+	const int size = strlen(url);
+	DWORD flags;
+	char* t = (char*)url;
+	if (find(url, "https://") == 0) {
+		flags = INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTP |
+			INTERNET_FLAG_KEEP_CONNECTION |
+			INTERNET_FLAG_NO_UI |
+			INTERNET_FLAG_SECURE |
+			INTERNET_FLAG_RELOAD;
+		t += 8;
+	}
+	else if (find(url, "http://") == 0) {
+		flags = INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_RELOAD;
+		t += 7;
+	}
+	char host[128];
+	sp(t, strlen(t), nullptr, "/", host);
+	char file[128] = { '/' };
+	sp(t, strlen(t), "/", nullptr, file+1);
+
+
+	HINTERNET hInternet = InternetOpenA("WinInetGet/CppRequests", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+	if (hInternet == NULL) {
+		int error = GetLastError();
+		writeLog("InternetOpenA", "%d", error);
+		return error;
+	}
+	DWORD d = 0;
+	HINTERNET hConnect = InternetConnectA(hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)&d);
+	if (hConnect == NULL) {
+		InternetCloseHandle(hInternet);
+		int error = GetLastError();
+		writeLog("InternetConnectA", "%d", error);
+		return error;
+	}
+	PCSTR rgpszAcceptTypes[] = { "*/*", NULL };
+	HINTERNET hRequest = HttpOpenRequestA(hConnect, "GET", file, "HTTP/1.1", NULL, rgpszAcceptTypes, flags, 0);
+	if (hRequest == NULL) {
+		InternetCloseHandle(hConnect);
+		InternetCloseHandle(hInternet);
+		int error = GetLastError();
+		writeLog("HttpOpenRequestA", "%d", error);
+		return error;
+	}
+	d = HttpSendRequestA(hRequest, NULL, 0, NULL, 0);
+	if (d == FALSE) {
+		InternetCloseHandle(hRequest);
+		InternetCloseHandle(hConnect);
+		InternetCloseHandle(hInternet);
+		int error = GetLastError();
+		writeLog("HttpSendRequestA", "%d", error);
+		return error;
+	}
+	char buf[10];
+	DWORD len = 10;
+	if (HttpQueryInfoA(hRequest, HTTP_QUERY_CONTENT_LENGTH, &buf, &len, NULL) == FALSE) {
+		InternetCloseHandle(hRequest);
+		InternetCloseHandle(hConnect);
+		InternetCloseHandle(hInternet);
+		int error = GetLastError();
+		writeLog("HttpQueryInfoA", "%d", error);
+		return error;
+	}
+	char* temp = (char*)malloc(atoi(buf) + 2);
+	if (oSize != nullptr) *oSize = atoi(buf);
+	ZeroMemory(temp, 2);
+	DWORD nLen;
+	if (InternetReadFile(hRequest, temp, atoi(buf), &nLen) == FALSE) {
+		InternetCloseHandle(hRequest);
+		InternetCloseHandle(hConnect);
+		InternetCloseHandle(hInternet);
+		free(temp);
+		int error = GetLastError();
+		writeLog("InternetReadFile", "%d", error);
+		return error;
+	}
+	InternetCloseHandle(hRequest);
+	InternetCloseHandle(hConnect);
+	InternetCloseHandle(hInternet);
+	*out = temp;
+	return 0;
+}
+
+char* doTranslate(const char* translationKey) {
+	if ((RvG::lang).isMember(translationKey)) strcpy(loadStringBuf, (RvG::lang)[translationKey].asCString());
+	else strcpy(loadStringBuf, translationKey);
+	return loadStringBuf;
 }
