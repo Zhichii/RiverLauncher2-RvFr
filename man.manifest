@@ -9,7 +9,7 @@
 	</trustInfo>
 	<!--application xmlns="urn:schemas-microsoft-com:asm.v3">
 		<windowsSettings xmlns:ws2="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
-			<ws2:dpiAwareness>PerMonitorV2</ws2:dpiAwareness>
+			<ws2:dpiAwareness>noaware</ws2:dpiAwareness>
 		</windowsSettings>
 	</application-->
 	<dependency>

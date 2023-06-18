@@ -1,9 +1,38 @@
 #pragma once
 #include <river/defines.h>
 
+DWORD WINAPI downloadAsset(LPVOID lpParam) {
+	try {
+		//char* temp;
+		const char* tmpS2 = "https://resources.download.minecraft.net";
+		Json::Value* i = ((Json::Value*)lpParam);
+		char tmpS3[512];
+		//int size;
+		strcpyf(tmpS3, "%s/%c%c/%s", tmpS2, (*i)["hash"].asCString()[0], (*i)["hash"].asCString()[1], (*i)["hash"].asCString());
+		//winGetHttps(&temp, tmpS3, &size);
+		fprintf(programmeLog, "...  %s \n", tmpS3);
+		Response resp = Get(tmpS3);
+		GetWindowTextA(*ediSettingsDir, tmpS3, 512);
+		strcatf(tmpS3, "\\assets\\objects\\%c%c\\%s", (*i)["hash"].asCString()[0], (*i)["hash"].asCString()[1], (*i)["hash"].asCString());
+		MakeSureDirectoryPathExists(tmpS3);
+		FILE* fp = fopen(tmpS3, "wb");
+		fwrite(resp.GetBinary(), 1, resp.size(), fp);
+		fclose(fp);
+		mtx.lock();
+		progress += 1;
+		mtx.unlock();
+		pgbProgress->set((int)progress);
+	}
+	catch (const char* e) {
+		fprintf(programmeLog, "...  %s \n", e);
+		ExitProcess(0);
+	}
+	return 0;
+}
+
 int download(HWND win, HWND btn) {
 	thread thr([=]()->int {
-		pgbDownload->set(0);
+		pgbProgress->set(0);
 		char versionId[256];
 		lisMinecraftDownloads->getText(lisMinecraftDownloads->getSelIndex(), versionId);
 		char tmpS[512];
@@ -25,20 +54,17 @@ int download(HWND win, HWND btn) {
 		Json::String s = sw.write(tempValue);
 		fwrite(s.c_str(), 1, s.size(), fp);
 		fclose(fp);
-		pgbDownload->add(10);
+		pgbProgress->add(5);
 
 		// Get Libraries
 		char tmpS3[512];
-		libraries = 0;
 		GetWindowTextA(*ediSettingsDir, tmpS3, 512);
 		double step = 30.0 / tempValue["libraries"].size();
-		double progress = 10;
+		progress = 5;
 
+		char* temp;
+		int size;
 		for (int i = 0; i < tempValue["libraries"].size(); i++) {
-			mtx.lock();
-			libraries++;
-			mtx.unlock();
-			char* temp;
 			try {
 				if (tempValue["libraries"][i]["downloads"].isMember("artifact")) {
 					strcpyf(tmpS2, "%s\\libraries\\%s", tmpS3, tempValue["libraries"][i]["downloads"]["artifact"]["path"].asCString());
@@ -53,14 +79,12 @@ int download(HWND win, HWND btn) {
 					fclose(fp);
 					free(temp);
 				}
-				else if (tempValue["libraries"][i]["downloads"].isMember("classifiers") &&
+				if (tempValue["libraries"][i]["downloads"].isMember("classifiers") &&
 					tempValue["libraries"][i]["downloads"]["classifiers"].isMember("natives-windows")) {
 					strcpyf(tmpS2, "%s\\libraries\\%s", tmpS3, tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["path"].asCString());
 					for (int j = 0; j < 512; j++) {
 						if (tmpS2[j] == '/') tmpS2[j] = '\\';
 					}
-					char* temp;
-					int size;
 					winGetHttps(&temp, tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["url"].asCString(), &size);
 					MakeSureDirectoryPathExists(tmpS2);
 					FILE* fp = fopen(tmpS2, "wb");
@@ -74,14 +98,10 @@ int download(HWND win, HWND btn) {
 				DebugBreak();
 			};
 			progress += step;
-			pgbDownload->set((int)progress);
-			UpdateWindow(*pgbDownload);
+			pgbProgress->set((int)progress);
+			UpdateWindow(*pgbProgress);
 		}
-		while (libraries < tempValue["libraries"].size()) {
-			Sleep(5);
-			writeLog("thr", "%d", libraries);
-		}
-		pgbDownload->set(40);
+		pgbProgress->set(35);
 
 		// Get Game Jar
 		Json::Value jar = tempValue["downloads"]["client"];
@@ -90,7 +110,7 @@ int download(HWND win, HWND btn) {
 		fp = fopen(tmpS2, "wb");
 		fwrite(resp.GetBinary(), 1, resp.size(), fp);
 		fclose(fp);
-		pgbDownload->add(25);
+		pgbProgress->add(30);
 
 		// Get Logging
 		if (tempValue.isMember("logging")) {
@@ -101,14 +121,37 @@ int download(HWND win, HWND btn) {
 			fwrite(resp.GetText().c_str(), 1, resp.size(), fp);
 			fclose(fp);
 		}
-		pgbDownload->add(5);
+		pgbProgress->add(5);
+
+		// Get Assets Index
+		resp = Get(tempValue["assetIndex"]["url"].asCString());
+		GetWindowTextA(*ediSettingsDir, tmpS2, 512);
+		strcatf(tmpS2, "\\assets\\indexes\\%s.json", tempValue["assetIndex"]["id"].asCString());
+		MakeSureDirectoryPathExists(tmpS2);
+		reader.parse(resp.GetText(), tempValue);
+		s = sw.write(tempValue);
+		fp = fopen(tmpS2, "w");
+		fwrite(s.c_str(), 1, resp.size(), fp);
+		fclose(fp);
+
+		//* Get Assets
+
+		progress = 70;
+		step = 30.0 / tempValue["objects"].size();
+		for (Json::Value i : tempValue["objects"]) {
+			DWORD threadID;
+			//HANDLE hThread = CreateThread(NULL, 0, downloadAsset, &i, 0, &threadID);	// 创建线程
+			//thread thr(downloadAsset, i, step);
+			//thr.detach();
+		}
+		pgbProgress->add(30);
 
 		// Finish
 
-		pgbDownload->set(100);
-		strcpyf(tmpS, "Finished Download '%s'. ", versionId);
-		MessageBoxA(win, tmpS, "Hint", MB_OK | MB_ICONINFORMATION);
-		pgbDownload->set(0);
+		pgbProgress->set(100);
+		strcpyf(tmpS, doTranslate("prompt.mcje.download.ok"), versionId);
+		MessageBoxA(win, tmpS, doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
+		//pgbProgress->set(0);
 
 		return 0;
 		});

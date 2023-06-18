@@ -33,6 +33,7 @@ FILE* programmeLog = fopen("RvL\\Log.txt", "w");
 HKEY hData;
 DWORD sz = 4;
 Json::Value accounts = Json::arrayValue;
+Json::Value langs = Json::arrayValue;
 int intAccountsSel = 0;
 int intSettingsWid;
 int intSettingsHei;
@@ -48,7 +49,7 @@ char newStr[258];
 HANDLE hRead, hWrite;
 STARTUPINFOA si;
 PROCESS_INFORMATION pi;
-int libraries = 0;
+double progress = 0;
 std::mutex mtx;
 
 /*
@@ -482,37 +483,37 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 	DWORD d = 0;
 	HINTERNET hConnect = InternetConnectA(hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)&d);
 	if (hConnect == NULL) {
-		InternetCloseHandle(hInternet);
 		int error = GetLastError();
 		writeLog("InternetConnectA", "%d", error);
+		InternetCloseHandle(hInternet);
 		return error;
 	}
 	PCSTR rgpszAcceptTypes[] = { "*/*", NULL };
 	HINTERNET hRequest = HttpOpenRequestA(hConnect, "GET", file, "HTTP/1.1", NULL, rgpszAcceptTypes, flags, 0);
 	if (hRequest == NULL) {
-		InternetCloseHandle(hConnect);
-		InternetCloseHandle(hInternet);
 		int error = GetLastError();
 		writeLog("HttpOpenRequestA", "%d", error);
+		InternetCloseHandle(hConnect);
+		InternetCloseHandle(hInternet);
 		return error;
 	}
 	d = HttpSendRequestA(hRequest, NULL, 0, NULL, 0);
 	if (d == FALSE) {
+		int error = GetLastError();
+		writeLog("HttpSendRequestA", "%d", error);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
 		InternetCloseHandle(hInternet);
-		int error = GetLastError();
-		writeLog("HttpSendRequestA", "%d", error);
 		return error;
 	}
 	char buf[10];
 	DWORD len = 10;
 	if (HttpQueryInfoA(hRequest, HTTP_QUERY_CONTENT_LENGTH, &buf, &len, NULL) == FALSE) {
+		int error = GetLastError();
+		writeLog("HttpQueryInfoA", "%d", error);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
 		InternetCloseHandle(hInternet);
-		int error = GetLastError();
-		writeLog("HttpQueryInfoA", "%d", error);
 		return error;
 	}
 	char* temp = (char*)malloc(atoi(buf) + 2);
@@ -520,12 +521,12 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 	ZeroMemory(temp, 2);
 	DWORD nLen;
 	if (InternetReadFile(hRequest, temp, atoi(buf), &nLen) == FALSE) {
+		int error = GetLastError();
+		writeLog("InternetReadFile", "%d", error);
+		free(temp);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
 		InternetCloseHandle(hInternet);
-		free(temp);
-		int error = GetLastError();
-		writeLog("InternetReadFile", "%d", error);
 		return error;
 	}
 	InternetCloseHandle(hRequest);

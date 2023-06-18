@@ -15,6 +15,7 @@ int main() {
 	RVG_START;
 	initData();
 	mkdir("RvL");
+
 	HRSRC hRsrc = FindResourceA(NULL, MAKEINTRESOURCEA(IDR_JAVACLASS1), "javaclass");
 	HGLOBAL IDR = LoadResource(NULL, hRsrc);
 	DWORD size = SizeofResource(NULL, hRsrc);
@@ -23,34 +24,44 @@ int main() {
 	fclose(javaClass);
 	FreeResource(IDR);
 
+	hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_LANG1), L"lang");
+	IDR = LoadResource(NULL, hRsrc);
+	size = SizeofResource(NULL, hRsrc);
+	reader.parse((const char*)LockResource(IDR), RvG::lang);
+	FreeResource(IDR);
+
 
 	// Set-up Pages
 
-	x = new RvG::Window("launcher.name", 0);
-	x->setTranslate("launcher.name", RvG::lang);
+	x = new RvG::Window("name.launcher", 0);
+	x->setTranslate("name.launcher", RvG::lang);
 	
 	SendMessage(*x, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
 	SendMessage(*x, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
 	
-	pgbDownload = new RvG::ProgressBar(170, 0, 600, 25, x);
+	pgbProgress = new RvG::ProgressBar(170, 0, 600, 25, x);
 	
-	btnLaunch = new RvG::Button("do.launch", 0, 0, 125, 125, x);
+	btnLaunch = new RvG::Button("do.launch", 0, 0, 150, 150, x);
 	btnLaunch->setTranslate("do.launch", RvG::lang);
 	
-	swiMinecraft = new RvG::Button("swi.mcje", 0, 150, 100, 50, x);
+	swiMinecraft = new RvG::Button("swi.mcje", 0, 175, 125, 50, x);
 	swiMinecraft->setTranslate("swi.mcje", RvG::lang);
 	
-	swiAccounts = new RvG::Button("swi.accounts", 25, 200, 75, 50, x);
+	swiAccounts = new RvG::Button("swi.accounts", 0, 225, 125, 50, x);
 	swiAccounts->setTranslate("swi.accounts", RvG::lang);
 	
-	swiSettings = new RvG::Button("swi.settings", 25, 250, 75, 50, x);
+	swiSettings = new RvG::Button("swi.settings", 0, 275, 125, 50, x);
 	swiSettings->setTranslate("swi.settings", RvG::lang);
 	
-	swiMods = new RvG::Button("swi.mods", 25, 300, 75, 50, x);
+	swiMods = new RvG::Button("swi.mods", 0, 325, 125, 50, x);
 	swiMods->setTranslate("swi.mods", RvG::lang);
-	
-	swiMinecraftBE = new RvG::Button("swi.mcbe", 0, 350, 100, 50, x);
+
+	swiMinecraftBE = new RvG::Button("swi.mcbe", 0, 375, 125, 50, x);
 	swiMinecraftBE->setTranslate("swi.mcbe", RvG::lang);
+	
+	swiLang = new RvG::Button("swi.lang", 0, 425, 125, 50, x);
+	swiLang->setTranslate("swi.lang", RvG::lang);
+
 
 
 
@@ -97,8 +108,8 @@ int main() {
 		}
 		GetWindowTextA(*ediSettingsDir, newStr, 256);
 		lisMinecraftVersion->getText(intMinecraftSel, baseStr);
-		DWORD rec;
-		if (GetHandleInformation(pi.hProcess, &rec)) {
+		DWORD rec = 0;
+		if (GetHandleInformation(pi.hProcess, &rec) != 0) {
 			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error"), MB_OK | MB_ICONERROR);
 		}
 		else {
@@ -288,6 +299,23 @@ int main() {
 
 
 
+	// Page Languages
+
+	pageLang = new RvG::Container(170, 25, 600, 400, x);
+	lisLangList = new RvG::ListBox(0, 0, 200, 400, pageLang, WS_VSCROLL);
+	for (Json::Value val : langs) {
+		lisLangList->add(val["name"].asCString());
+	}
+	RegGetValueA(hData, NULL, "SelectedLang", RRF_RT_REG_DWORD, NULL, &intLangSel, &sz);
+	lisLangList->setSelIndex(intLangSel);
+	hRsrc = FindResource(NULL, MAKEINTRESOURCE(langs[intLangSel]["num"].asInt()), L"lang");
+	IDR = LoadResource(NULL, hRsrc);
+	size = SizeofResource(NULL, hRsrc);
+	reader.parse((const char*)LockResource(IDR), RvG::lang);
+	FreeResource(IDR);
+	x->translate(RvG::lang);
+
+
 	// Switch Buttons
 
 	swiMinecraft->bindCommand([](HWND win, HWND btn)->int {
@@ -369,14 +397,17 @@ int main() {
 	});
 	swiSettings->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
-		curPage = pageSettings;
+		curPage = pageAccounts;
 		if (hasPage2) {
 			curPage2->hide();
 			hasPage2 = 0;
 		}
 		curPage->show();
 		return 0;
-	});
+		});
+	swiMods->bindCommand([](HWND win, HWND btn)->int {
+		return 0;
+		});
 	swiMinecraftBE->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
 		curPage = pageMinecraftBE;
@@ -387,6 +418,16 @@ int main() {
 		curPage->show();
 		return 0;
 	});
+	swiLang->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		curPage = pageLang;
+		if (hasPage2) {
+			curPage2->hide();
+			hasPage2 = 0;
+		}
+		curPage->show();
+		return 0;
+		});
 	thread thr([]()->int {
 		while (1) {
 			if (curPage == pageMinecraft && IsWindowVisible(*x)) {
@@ -405,8 +446,27 @@ int main() {
 			}
 			if (curPage == pageAccounts && IsWindowVisible(*x)) {
 				intAccountsSel = lisAccountsList->getSelIndex();
-				if (intAccountsSel < 0 || intAccountsSel >= accounts.size()) intAccountsSel = accounts.size() - 1;
+				if (intAccountsSel < 0 || intAccountsSel >= accounts.size()) {
+					intAccountsSel = 0;
+					lisAccountsList->setSelIndex(intLangSel);
+				}
 				RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &intAccountsSel, 4);
+			}
+			if (curPage == pageLang && IsWindowVisible(*x)) {
+				if (intLangSel != lisLangList->getSelIndex()) {
+					intLangSel = lisLangList->getSelIndex();
+					if (intLangSel < 0 || intLangSel >= langs.size()) {
+						intLangSel = 0;
+						lisLangList->setSelIndex(intLangSel);
+					}
+					RegSetKeyValueA(hData, NULL, "SelectedLang", REG_DWORD, &intLangSel, 4);
+					HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(langs[intLangSel]["num"].asInt()), L"lang");
+					HGLOBAL IDR = LoadResource(NULL, hRsrc);
+					DWORD size = SizeofResource(NULL, hRsrc);
+					reader.parse((const char*)LockResource(IDR), RvG::lang);
+					FreeResource(IDR);
+					x->translate(RvG::lang);
+				}
 			}
 			if (!IsWindowVisible(*x)) break;
 			Sleep(50);
@@ -418,10 +478,10 @@ int main() {
 		try {
 			Response resp = Get("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
 			reader.parse(resp.GetText(), versionManifest);
+			if (IsWindowVisible(*pageMinecraftDownloads)) lisMinecraftDownloads->show();
 			for (Json::Value i : versionManifest["versions"]) {
 				lisMinecraftDownloads->add(i["id"].asCString());
 			}
-			if (IsWindowVisible(*pageMinecraftDownloads)) lisMinecraftDownloads->show();
 			labMinecraftDownloadsPrompt->hide();
 			char temp[64] = {};
 			sz = 64;
@@ -431,7 +491,7 @@ int main() {
 				strcpyf(temp, doTranslate("prompt.mcje.newversion"), versionManifest["latest"]["snapshot"].asCString());
 				sz = strlen(versionManifest["latest"]["snapshot"].asCString())+1;
 				RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, versionManifest["latest"]["snapshot"].asCString(), sz);
-				MessageBoxA(*x, temp, "Prompt", MB_OK | MB_ICONINFORMATION);
+				MessageBoxA(*x, temp, doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
 			}
 		}
 		catch (const char* msg){
@@ -450,6 +510,7 @@ int main() {
 	pageAccounts->hide();
 	pageSettings->hide();
 	pageMinecraftBE->hide();
+	pageLang->hide();
 
 	x->keepResponding();
 	return 0;

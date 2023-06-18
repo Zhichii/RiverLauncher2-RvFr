@@ -6,7 +6,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	
 	// Prepare
 
-	pgbDownload->set(0);
+	pgbProgress->set(0);
 	struct _stat fileStat;
 	if ((_stat(dir, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {}
 	else return 1;
@@ -23,7 +23,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
 	if (accounts.size() == 0) {
-		MessageBoxA(*x, "No accounts created! ", "Error", MB_OK | MB_ICONERROR);
+		MessageBoxA(*x, doTranslate("prompt.accounts.no"), doTranslate("error"), MB_OK | MB_ICONERROR);
 		return 0;
 	}
 
@@ -46,10 +46,14 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	if (output == nullptr) {
 		return 1;
 	}
-	pgbDownload->add(10);
+	pgbProgress->add(10);
 
 	// Libraries
 
+	char nativeLatestA[256] = {};
+	strcpyf(nativeLatestA, "%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
+	wchar_t nativeLatestW[256] = {};
+	MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 256);
 	for (Json::Value i : libraries) {
 		valueSplit(i["name"].asCString(), ":", &tmp);
 		tmp[2] = "";
@@ -108,26 +112,22 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 			if (tmpI == 0) continue;	
 		}
 		strcpyf(libDir, "libraries\\%s", versionLib["path"].asCString());
-		for (int i = 0; i < strlen(libDir); i++) {
-			if (libDir[i] == '/') libDir[i] = '\\';
+		for (int j = 0; j < strlen(libDir); j++) {
+			if (libDir[j] == '/') libDir[j] = '\\';
 		}
 		if (i.isMember("natives")) {
-			char nativeTmp[130] = {};
+			char nativeTmp[256] = {};
 			strcpyf(nativeTmp, "%slibraries\\%s", cwd, versionLib["path"].asCString());
-			for (int i = 0; i < 130; i++) {
+			for (int i = 0; i < 256; i++) {
 				if (nativeTmp[i] == 0) break;
 				if (nativeTmp[i] == '/') nativeTmp[i] = '\\';
 			}
-			wchar_t nativeTmpW[130] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 128);
+			wchar_t nativeTmpW[256] = {};
+			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeTmp, strlen(nativeTmp), nativeTmpW, 256);
 			HZIP hZip = OpenZip(nativeTmpW, NULL);
 			ZIPENTRY ze;
 			GetZipItem(hZip, -1, &ze);
 			int nums = ze.index;
-			char nativeLatestA[130] = {};
-			strcpyf(nativeLatestA, "%sversions\\%s\\%s-natives\\", cwd, versionId, versionId);
-			wchar_t nativeLatestW[130] = {};
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, nativeLatestA, strlen(nativeLatestA), nativeLatestW, 128);
 			SetUnzipBaseDir(hZip, nativeLatestW);
 			for (int i = 0; i < nums; i++) {
 				GetZipItem(hZip, i, &ze);
@@ -152,7 +152,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	tmpC = (char*)malloc(6402);
 	join(tmp, tmpC, 6400, ";");
 	writeLog("LaunchInstance", tmpC);
-	pgbDownload->add(40);
+	pgbProgress->add(40);
 
 	// Get Launch Level
 
@@ -162,14 +162,14 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	else {
 		writeLog("LaunchInstance", "Unknow launch level. ");
 		free(tmpC);
-		MessageBoxA(*x, "Unable to launch! ", "Error", MB_OK | MB_ICONERROR);
+		MessageBoxA(*x, doTranslate("prompt.mcje.notlaunch"), doTranslate("error"), MB_OK | MB_ICONERROR);
 		return 0;
 	}
 	libraries.empty();
 	tmp.empty();
 	versionLib.empty();
 	libNameSp.empty();
-	pgbDownload->add(10);
+	pgbProgress->add(10);
 
 	Json::Value gameArg;
 	char* gameArgC = NULL;
@@ -273,7 +273,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	else if (javaVersion <= 11) javaVersion = 8;
 	else javaVersion = 17;
 	char gottenJavaVersion[512];
-	pgbDownload->add(10);
+	pgbProgress->add(10);
 
 	// Get Javas
 
@@ -384,7 +384,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 			break;
 		}
 	}
-	pgbDownload->add(20);
+	pgbProgress->add(20);
 
 	// Write into output
 
@@ -450,7 +450,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	free(jvmArgC);
 	int f = 0;
 	DWORD rec;
-	pgbDownload->add(10);
+	pgbProgress->add(10);
 
 	// Launch
 
@@ -485,15 +485,15 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	}
 
 	CloseHandle(hWrite);
-	pgbDownload->set(100);
+	pgbProgress->set(100);
 
 	// Create dia'log'
 
 	char buf[4098];
 	RvG::Label* edi;
 	thread thr2([&, buf] {
-		minecraftLog = new RvG::Window("Minecraft Log", 1, CW_USEDEFAULT, CW_USEDEFAULT, 650, 450);
-		edi = new RvG::Label("The log will show here", 25, 25, 600, 400, minecraftLog, WS_BORDER);
+		minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 650, 450);
+		edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 25, 25, 600, 400, minecraftLog, WS_BORDER);
 		minecraftLog->keepResponding();
 		minecraftLog = nullptr;
 		});
@@ -506,7 +506,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 			}
 		}
 		if (minecraftLog != nullptr) {
-			SetWindowTextA(edi->hWnd, "Process ended! ");
+			SetWindowTextA(edi->hWnd, doTranslate("prompt.mcje.processended"));
 			UpdateWindow(minecraftLog->hWnd);
 		}
 		CloseHandle(hRead);

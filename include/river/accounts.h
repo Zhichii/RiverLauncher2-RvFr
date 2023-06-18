@@ -42,11 +42,11 @@ int addOfflineAcc(HWND win, HWND btn);
 
 int addAcc(HWND win, HWND btn) {
 	thread thr([=]()->int {
-		RvG::Window* dialog = new RvG::Window(L"Dialog", 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
-		new RvG::Label(L"Account Type: ", 10, 10, 512, 20, dialog);
-		RvG::Button* btnDialogOfficial = new RvG::Button(L"Add Official Account", 410, 157, 100, 40, dialog);
-		RvG::Button* btnDialogOffline = new RvG::Button(L"Add Offline Account", 516, 157, 100, 40, dialog);
-		RvG::Button* btnDialogCan = new RvG::Button(L"Cancel", 622, 157, 100, 40, dialog);
+		RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+		new RvG::Label(doTranslate("type.accounts.ask"), 10, 10, 512, 20, dialog);
+		RvG::Button* btnDialogOfficial = new RvG::Button(doTranslate("do.accounts.add.mojang"), 410, 157, 100, 40, dialog);
+		RvG::Button* btnDialogOffline = new RvG::Button(doTranslate("do.accounts.add.legacy"), 516, 157, 100, 40, dialog);
+		RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.cancel"), 622, 157, 100, 40, dialog);
 		btnDialogCan->bindCommand([](HWND win, HWND btn) {
 			DestroyWindow(win);
 			return 0;
@@ -82,25 +82,28 @@ int addOfficialAcc(HWND win, HWND btn) {
 		return ret ? ret : -1;
 	}
 
-	CloseHandle(hRead);
 	CloseHandle(hWrite);
+	CloseHandle(hRead);
 	CloseHandle(pi.hThread);
 	CloseHandle(pi.hProcess);
 	for (RvG::ParentWidget* i : dialog->children) {
 		if (i == nullptr) break;
 		i->remove();
 	}
-	new RvG::Label(L"After the page become an blank page, please copy the address here: ", 10, 10, 712, 20, dialog);
-	inpDialogUsername = new RvG::InputBox(L"Template: https://login.live.com/oauth20_desktop.srf?code=xxxx&lc=xxxx", 10, 30, 712, 30, dialog);
-	RvG::Button* btnDialogOK = new RvG::Button(L"Add", 516, 157, 100, 40, dialog);
-	RvG::Button* btnDialogCan = new RvG::Button(L"Cancel", 622, 157, 100, 40, dialog);
+	new RvG::Label(doTranslate("prompt.accounts.after"), 10, 10, 712, 20, dialog);
+	inpDialogUsername = new RvG::InputBox("https://login.live.com/oauth20_desktop.srf?code=......&lc=....", 10, 30, 712, 30, dialog);
+	RvG::Button* btnDialogOK = new RvG::Button(doTranslate("do.accounts.sure"), 516, 157, 100, 40, dialog);
+	RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.cancel"), 622, 157, 100, 40, dialog);
 	btnDialogCan->bindCommand([](HWND win, HWND btn) {
 		DestroyWindow(win);
 		return 0;
 		});
 	btnDialogOK->bindCommand([](HWND win, HWND btn)->int {
+		TerminateProcess(pi.hProcess, 0);
+		pi.hProcess = 0;
 		RvG::Window* dialog = (RvG::Window*)GetWindowLongPtr(win, GWLP_USERDATA);
 		thread thr([dialog, win]()->int {
+			char tS[256];
 			Json::Value temp = Json::objectValue;
 			Json::Value x;
 			GetWindowTextA(*inpDialogUsername, strInpBox, 256);
@@ -108,10 +111,12 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (0/6)", 0, 75, 700, 20, dialog, SS_CENTER);
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 0);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
 			
 			// Get Username and token
 
+			pgbProgress->set(0);
 			char tmpString[256];
 			sp(strInpBox, 256, "?code=", "&lc=", tmpString);
 			char url[3200];
@@ -127,8 +132,10 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (1/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 1);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100 / 6 * 1);
+
 			// Step 2
 			resp = Post("https://user.auth.xboxlive.com/user/authenticate", string(url));
 			reader.parse(resp.GetText(), temp);
@@ -137,8 +144,10 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (2/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 2);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100 / 6 * 2);
+
 			// Step 3
 			resp = Post("https://xsts.auth.xboxlive.com/xsts/authorize", string(url));
 			reader.parse(resp.GetText(), temp);
@@ -147,7 +156,9 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (3/6)", 0, 75, 700, 20, dialog, SS_CENTER);
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 3);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100 / 6 * 3);
 
 			// Step 4
 			resp = Post("https://api.minecraftservices.com/authentication/login_with_xbox", string(url));
@@ -156,9 +167,11 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (4/6)", 0, 75, 700, 20, dialog, SS_CENTER);
-			
-			// Has Minecraft? 
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 4);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100 / 6 * 4);
+
+			// Step 5: Has Minecraft? 
 			map<string, string> headers;
 			headers["Authorization"] = "Bearer " + temp["access_token"].asString();
 			resp = Get("https://api.minecraftservices.com/entitlements/mcstore", headers);
@@ -178,16 +191,21 @@ int addOfficialAcc(HWND win, HWND btn) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (5/6)", 0, 75, 700, 20, dialog, SS_CENTER);
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 5);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100 / 6 * 5);
 
-			// Step 5
+			// Step 6
 			resp = Get("https://api.minecraftservices.com/minecraft/profile", headers);
 			reader.parse(resp.GetText(), x);
 			for (RvG::ParentWidget* i : dialog->children) {
 				if (i == nullptr) break;
 				i->remove();
 			}
-			new RvG::Label(L"Getting informations from your Microsoft account... (6/6)", 0, 75, 700, 20, dialog, SS_CENTER);
+			strcpyf(tS, doTranslate("prompt.accounts.step"), 6);
+			new RvG::Label(tS, 0, 75, 700, 20, dialog, SS_CENTER);
+			pgbProgress->set(100);
+			
 			// Check re-add
 			bool readd = 0;
 			for (int i = 0; i < accounts.size(); i ++) {
@@ -211,8 +229,8 @@ int addOfficialAcc(HWND win, HWND btn) {
 					if (i == nullptr) break;
 					i->remove();
 				}
-				staticLab = new RvG::Label(L"You have already added this Microsoft account! ", 0, 75, 700, 20, dialog, SS_CENTER);
-				staticBtn = new RvG::Button(L"OK", 622, 157, 100, 40, dialog);
+				staticLab = new RvG::Label(doTranslate("prompt.accounts.already"), 0, 75, 700, 20, dialog, SS_CENTER);
+				staticBtn = new RvG::Button(doTranslate("sel.yes"), 622, 157, 100, 40, dialog);
 				staticBtn->bindCommand([](HWND win, HWND btn) {
 					DestroyWindow(win);
 					return 0;
@@ -237,15 +255,12 @@ int addOfficialAcc(HWND win, HWND btn) {
 			string s = writer.write(accounts);
 			RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, s.c_str(), s.size() + 1);
 			char tempA[512];
-			wchar_t tempW[512];
 			SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 			for (Json::Value i : accounts) {
 				strcpy(tempA, i["userName"].asCString());
-				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
-				tempW[strlen(tempA)] = 0;
-				if (i["userType"].asInt() == 0) lstrcat(tempW, L" (Offline)");
-				if (i["userType"].asInt() == 1) lstrcat(tempW, L" (Official)");
-				lisAccountsList->add(tempW);
+				if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
+				if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+				lisAccountsList->add(tempA);
 			}
 			lisAccountsList->show();
 			lisAccountsList->setSelIndex(accounts.size() - 1);
@@ -269,10 +284,10 @@ int addOfflineAcc(HWND win, HWND btn) {
 		if (i == nullptr) break;
 		i->remove();
 	}
-	new RvG::Label(L"Account Name: ", 10, 10, 562, 20, dialog);
-	inpDialogUsername = new RvG::InputBox(L"Player", 10, 30, 712, 30, dialog);
-	RvG::Button* btnDialogOK = new RvG::Button(L"Add", 516, 157, 100, 40, dialog);
-	RvG::Button* btnDialogCan = new RvG::Button(L"Cancel", 622, 157, 100, 40, dialog);
+	new RvG::Label(doTranslate("prompt.accounts.name"), 10, 10, 562, 20, dialog);
+	inpDialogUsername = new RvG::InputBox("Player", 10, 30, 712, 30, dialog);
+	RvG::Button* btnDialogOK = new RvG::Button(doTranslate("do.accounts.sure"), 516, 157, 100, 40, dialog);
+	RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.cancel"), 622, 157, 100, 40, dialog);
 	btnDialogCan->bindCommand([](HWND win, HWND btn) {
 		DestroyWindow(win);
 		return 0;
@@ -294,15 +309,12 @@ int addOfflineAcc(HWND win, HWND btn) {
 		string s = writer.write(accounts);
 		RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, s.c_str(), strlen(s.c_str()) + 1);
 		char tempA[512];
-		wchar_t tempW[512];
 		SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 		for (Json::Value i : accounts) {
 			strcpy(tempA, i["userName"].asCString());
-			MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
-			tempW[strlen(tempA)] = 0;
-			if (i["userType"].asInt() == 0) lstrcat(tempW, L" (Offline)");
-			if (i["userType"].asInt() == 1) lstrcat(tempW, L" (Official)");
-			lisAccountsList->add(tempW);
+			if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
+			if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+			lisAccountsList->add(tempA);
 		}
 		lisAccountsList->show();
 		lisAccountsList->setSelIndex(accounts.size() - 1);
@@ -318,14 +330,14 @@ int addOfflineAcc(HWND win, HWND btn) {
 
 int remAcc(HWND win, HWND btn) {
 	thread thr([]() {
-		RvG::Window* dialog = new RvG::Window(L"Dialog", 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+		RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
 		char temp[256] = {};
 		wchar_t t2[256] = {};
-		sprintf(temp, "Really remove account '%s' ?", accounts[intAccountsSel]["userName"].asCString());
+		sprintf(temp, doTranslate("prompt.accounts.remove"), accounts[intAccountsSel]["userName"].asCString());
 		MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, temp, strlen(temp), t2, 256);
 		new RvG::Label(t2, 10, 10, 512, 20, dialog);
-		RvG::Button* btnDialogOK = new RvG::Button(L"Yes", 516, 157, 100, 40, dialog);
-		RvG::Button* btnDialogCan = new RvG::Button(L"No", 622, 157, 100, 40, dialog);
+		RvG::Button* btnDialogOK = new RvG::Button(doTranslate("sel.yes"), 516, 157, 100, 40, dialog);
+		RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.no"), 622, 157, 100, 40, dialog);
 		btnDialogCan->bindCommand([](HWND win, HWND btn) {
 			DestroyWindow(win);
 			return 0;
@@ -337,16 +349,13 @@ int remAcc(HWND win, HWND btn) {
 			string s = writer.write(accounts);
 			RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, s.c_str(), strlen(s.c_str()) + 1);
 			char tempA[512];
-			wchar_t tempW[512];
 			if (accounts.size() != 0) {
 				SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 				for (Json::Value i : accounts) {
 					strcpy(tempA, i["userName"].asCString());
-					tempW[strlen(tempA)] = 0;
-					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, tempA, strlen(tempA), tempW, 512);
-					if (i["userType"].asInt() == 0) lstrcat(tempW, L" (Offline)");
-					if (i["userType"].asInt() == 1) lstrcat(tempW, L" (Official)");
-					lisAccountsList->add(tempW);
+					if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
+					if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+					lisAccountsList->add(tempA);
 				}
 				lisAccountsList->setSelIndex(intAccountsSel);
 				lisAccountsList->show();

@@ -21,6 +21,9 @@ int initData() {
 	t = 0;
 	if (RegQueryValueEx(hData, L"SelectedAccount", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "SelectedAccount", REG_DWORD, &t, 4);
+	t = 0;
+	if (RegQueryValueEx(hData, L"SelectedLang", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
+		RegSetKeyValueA(hData, NULL, "SelectedLang", REG_DWORD, &t, 4);
 	
 	dwType = REG_SZ;
 	wchar_t fileDir[MAX_PATH + 1] = { 0 };
@@ -42,11 +45,14 @@ int initData() {
 		RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, "[]\0", 3);
 	if (RegQueryValueEx(hData, L"LatestKnown", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, "\0", 1);
-	
-	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_LANG1), L"lang");
-	HGLOBAL IDR = LoadResource(NULL, hRsrc);
-	DWORD size = SizeofResource(NULL, hRsrc);
-	reader.parse((const char*)LockResource(IDR), RvG::lang);
-	FreeResource(IDR);
+
+	langs[0] = Json::objectValue;
+	langs[0]["id"] = "zh_cn";
+	langs[0]["name"] = "中文";
+	langs[0]["num"] = IDR_LANG1;
+	langs[1] = Json::objectValue;
+	langs[1]["id"] = "en_us";
+	langs[1]["name"] = "English";
+	langs[1]["num"] = IDR_LANG2;
 	return 0;
 }

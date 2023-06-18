@@ -172,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="getJavaMainVersion.class" />
+    <None Include="lang\en_us.json" />
     <None Include="lang\zh_cn.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

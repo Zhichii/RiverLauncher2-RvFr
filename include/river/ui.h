@@ -6,7 +6,7 @@ RvG::Container* curPage;
 bool hasPage2 = 0;
 RvG::Container* curPage2;
 RvG::Button* btnLaunch;
-RvG::ProgressBar* pgbDownload;
+RvG::ProgressBar* pgbProgress;
 
 RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;
@@ -39,6 +39,11 @@ RvG::InputBox* ediSettingsHei;
 
 RvG::Button* swiMods;
 RvG::Container* pageMods;
+
+RvG::Button* swiLang;
+RvG::Container* pageLang;
+RvG::ListBox* lisLangList;
+int intLangSel = 0;
 
 RvG::Button* swiMinecraftBE;
 RvG::Container* pageMinecraftBE;
