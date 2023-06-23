@@ -68,12 +68,28 @@ int main() {
 	// Page Minecraft
 
 	pageMinecraft = new RvG::Container(170, 25, 600, 400, x);
-	
-	btnMinecraftEnd = new RvG::Button("do.mcje.end", 200, 100, 160, 100, pageMinecraft);
-	btnMinecraftEnd->setTranslate("do.mcje.end", RvG::lang);
 
-	swiMinecraftDownloads = new RvG::Button("do.mcje.swi.download", 200, 0, 160, 100, pageMinecraft);
-	swiMinecraftDownloads->setTranslate("do.mcje.swi.download", RvG::lang);
+	btnMinecraftAdd = new RvG::Button("do.mcje.swi.download", 200, 0, 160, 100, pageMinecraft);
+	btnMinecraftAdd->setTranslate("do.mcje.swi.download", RvG::lang);
+	btnMinecraftAdd->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		if (hasPage2) {
+			curPage2->hide();
+			hasPage2 = 0;
+		}
+		hasPage2 = 1;
+		curPage2 = pageMinecraftDownloads;
+		curPage2->show();
+		if (versionManifest.size() != 0) {
+			lisMinecraftDownloads->show();
+			labMinecraftDownloadsPrompt->hide();
+		}
+		else {
+			labMinecraftDownloadsPrompt->show();
+			lisMinecraftDownloads->hide();
+		}
+		return 0;
+		});
 
 	lisMinecraftVersion = new RvG::ListBox(0, 0, 200, 400, pageMinecraft, WS_VSCROLL);
 	
@@ -119,18 +135,6 @@ int main() {
 				break;
 			}
 			}
-		}
-		return 0;
-	});
-	btnMinecraftEnd->bindCommand([](HWND win, HWND btn)->int {
-		if (TerminateProcess(pi.hProcess, 0)) {
-			MessageBoxA(win, doTranslate("prompt.mcje.end"), doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
-			CloseHandle(hRead);
-			CloseHandle(pi.hThread);
-			CloseHandle(pi.hProcess);
-		}
-		else {
-			MessageBoxA(win, doTranslate("prompt.mcje.notend"), doTranslate("error"), MB_OK | MB_ICONERROR);
 		}
 		return 0;
 	});
@@ -348,25 +352,6 @@ int main() {
 		}
 		return 0;
 	});
-	swiMinecraftDownloads->bindCommand([](HWND win, HWND btn)->int {
-		curPage->hide();
-		if (hasPage2) {
-			curPage2->hide();
-			hasPage2 = 0;
-		}
-		hasPage2 = 1;
-		curPage2 = pageMinecraftDownloads;
-		curPage2->show();
-		if (versionManifest.size() != 0) {
-			lisMinecraftDownloads->show();
-			labMinecraftDownloadsPrompt->hide();
-		}
-		else {
-			labMinecraftDownloadsPrompt->show();
-			lisMinecraftDownloads->hide();
-		}
-		return 0;
-		});
 	swiAccounts->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
 		curPage = pageAccounts;
@@ -397,7 +382,7 @@ int main() {
 	});
 	swiSettings->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
-		curPage = pageAccounts;
+		curPage = pageSettings;
 		if (hasPage2) {
 			curPage2->hide();
 			hasPage2 = 0;

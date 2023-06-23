@@ -156,34 +156,12 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 
 	// Get Launch Level
 
-	bool level;
-	if (versionInfo.isMember("arguments")) level = 1;
-	else if (versionInfo.isMember("minecraftArguments")) level = 0;
-	else {
-		writeLog("LaunchInstance", "Unknow launch level. ");
-		free(tmpC);
-		MessageBoxA(*x, doTranslate("prompt.mcje.notlaunch"), doTranslate("error"), MB_OK | MB_ICONERROR);
-		return 0;
-	}
-	libraries.empty();
-	tmp.empty();
-	versionLib.empty();
-	libNameSp.empty();
-	pgbProgress->add(10);
-
 	Json::Value gameArg;
-	char* gameArgC = NULL;
+	char* gameArgC = (char*)malloc(1602);
 	Json::Value jvmArg;
-	char* jvmArgC = NULL;
+	char* jvmArgC = (char*)malloc(6402);
 	int gameArgCLen = 1600;
-	if (level == 0) {
-		gameArgC = (char*)malloc(1602);
-		strcpy(gameArgC, versionInfo["minecraftArguments"].asCString());
-		jvmArg.clear();
-		jvmArg.append("-cp");
-		jvmArg.append(tmpC);
-	}
-	if (level == 1) {
+	if (versionInfo.isMember("arguments")) {
 		gameArg.clear();
 		gameArg = Json::arrayValue;
 		for (Json::Value i : versionInfo["arguments"]["game"]) {
@@ -212,8 +190,6 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 				}
 			}
 		}
-		gameArgC = (char*)malloc(1602);
-		join(gameArg, gameArgC, 1600, " ");
 		jvmArg.clear();
 		for (Json::Value i : versionInfo["arguments"]["jvm"]) {
 			if (i.isString()) {
@@ -264,8 +240,31 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 				}
 			}
 		}
+		goto MARK_SKIP;
 	}
-	jvmArgC = (char*)malloc(6402);
+	if (versionInfo.isMember("minecraftArguments")) {
+		gameArg.append(versionInfo["minecraftArguments"].asCString());
+		jvmArg.clear();
+		jvmArg.append("-cp");
+		jvmArg.append(tmpC);
+		goto MARK_SKIP;
+	}
+
+MARK_UNABLELAUNCHING:
+	writeLog("LaunchInstance", "Unknow launch level. ");
+	free(tmpC);
+	free(gameArgC);
+	free(jvmArgC);
+	MessageBoxA(*x, doTranslate("prompt.mcje.notlaunch"), doTranslate("error"), MB_OK | MB_ICONERROR);
+	return 0;
+	
+MARK_SKIP:
+	libraries.empty();
+	tmp.empty();
+	versionLib.empty();
+	libNameSp.empty();
+	pgbProgress->add(10);
+	join(gameArg, gameArgC, 1600, " ");
 	join(jvmArg, jvmArgC, 6400, " ");
 	int javaVersion = versionInfo["javaVersion"]["majorVersion"].asInt();
 	if (javaVersion > 11) javaVersion = 17;
@@ -474,7 +473,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 
 	strcpyf(tmpS, "%sversions\\%s\\RiverLaunch.bat", cwd, versionId);
 	FILE* outFile = fopen(tmpS, "w");
-	fprintf(outFile, "@echo off\ntitle Minecraft Log\ncd /d %s\n%s", cwd, output);
+	fprintf(outFile, "@echo off\ncd /d %s\n%s\npause", cwd, output);
 	fclose(outFile);
 	if (!CreateProcessA(NULL, output, NULL, NULL, TRUE, NULL,
 		NULL, cwd, &si, &pi)) {
@@ -492,8 +491,21 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	char buf[4098];
 	RvG::Label* edi;
 	thread thr2([&, buf] {
-		minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 650, 450);
-		edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 25, 25, 600, 400, minecraftLog, WS_BORDER);
+		minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 600, 560);
+		edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 0, 0, 600, 500, minecraftLog, WS_BORDER);
+		RvG::Button* btnEnd = new RvG::Button(doTranslate("do.mcje.end"), 500, 500, 100, 60, minecraftLog);
+		btnEnd->bindCommand([](HWND win, HWND btn)->int {
+			if (TerminateProcess(pi.hProcess, 0)) {
+				MessageBoxA(win, doTranslate("prompt.mcje.end"), doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
+				CloseHandle(hRead);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+			}
+			else {
+				MessageBoxA(win, doTranslate("prompt.mcje.notend"), doTranslate("error"), MB_OK | MB_ICONERROR);
+			}
+			return 0;
+			});
 		minecraftLog->keepResponding();
 		minecraftLog = nullptr;
 		});

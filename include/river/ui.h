@@ -10,12 +10,12 @@ RvG::ProgressBar* pgbProgress;
 
 RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;
-RvG::Button* btnMinecraftEnd;
+RvG::Button* btnMinecraftAdd;
+RvG::Button* btnMinecraft;
 RvG::Label* labMinecraftVersionPrompt;
 RvG::ListBox* lisMinecraftVersion;
 int intMinecraftSel = 0;
 
-RvG::Button* swiMinecraftDownloads;
 RvG::Container* pageMinecraftDownloads;
 RvG::Button* btnMinecraftDownloads;
 RvG::ListBox* lisMinecraftDownloads;

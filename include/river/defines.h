@@ -41,6 +41,8 @@ RvG::Window* minecraftLog;
 RvG::Label* staticLab;
 RvG::Button* staticBtn;
 Json::Value versionManifest = Json::arrayValue;
+HINTERNET hInternet;
+map<string, HINTERNET> hosts;
 
 char baseStr[258];
 char newStr[258];
@@ -474,20 +476,26 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 	sp(t, strlen(t), "/", nullptr, file+1);
 
 
-	HINTERNET hInternet = InternetOpenA("WinInetGet/CppRequests", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 	if (hInternet == NULL) {
-		int error = GetLastError();
-		writeLog("InternetOpenA", "%d", error);
-		return error;
+		hInternet = InternetOpenA("RiverLauncher2", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+		if (hInternet == NULL) {
+			int error = GetLastError();
+			writeLog("InternetOpenA", "%d", error);
+			return error;
+		}
 	}
 	DWORD d = 0;
-	HINTERNET hConnect = InternetConnectA(hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)&d);
+	HINTERNET hConnect;
+	if (!hosts.contains(host)) {
+		hConnect = InternetConnectA(hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)&d);
+	}
 	if (hConnect == NULL) {
 		int error = GetLastError();
 		writeLog("InternetConnectA", "%d", error);
 		InternetCloseHandle(hInternet);
 		return error;
 	}
+	hosts[host] = hConnect;
 	PCSTR rgpszAcceptTypes[] = { "*/*", NULL };
 	HINTERNET hRequest = HttpOpenRequestA(hConnect, "GET", file, "HTTP/1.1", NULL, rgpszAcceptTypes, flags, 0);
 	if (hRequest == NULL) {
