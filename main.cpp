@@ -129,12 +129,16 @@ int main() {
 			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error"), MB_OK | MB_ICONERROR);
 		}
 		else {
-			switch (launchInstance(baseStr, newStr, x)) {
-			case 1: {
-				MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error"), MB_OK | MB_ICONERROR);
-				break;
-			}
-			}
+			thread thr([win]() {
+				int n = launchInstance(baseStr, newStr, x);
+				switch (n) {
+				case 1: {
+					MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error"), MB_OK | MB_ICONERROR);
+					break;
+				}
+				}
+				});
+			thr.detach();
 		}
 		return 0;
 	});

@@ -5,8 +5,8 @@
 char strInpBox[256];
 
 int initAccounts() {
-	char tempA[1026] = {};
-	sz = 1024;
+	char tempA[16386] = {};
+	sz = 16384;
 	RegGetValueA(hData, NULL, "Accounts", RRF_RT_REG_SZ, NULL, tempA, &sz);
 	reader.parse(tempA, accounts);
 	sz = 4;
@@ -126,7 +126,7 @@ int addOfficialAcc(HWND win, HWND btn) {
 			Response resp = Get(url);
 			reader.parse(resp.GetText(), temp);
 			strcpyf(url, "{\"Properties\":{\"AuthMethod\":\"RPS\", \"SiteName\":\"user.auth.xboxlive.com\", \"RpsTicket\":\"d=%s\"}, \"RelyingParty\":\"http://auth.xboxlive.com\", \"TokenType\":\"JWT\"}", temp["access_token"].asCString());
-			char refreshToken[128];
+			char refreshToken[512];
 			strcpy(refreshToken, temp["refresh_token"].asCString());
 			for (RvG::ParentWidget* i : dialog->children) {
 				if (i == nullptr) break;
@@ -214,6 +214,7 @@ int addOfficialAcc(HWND win, HWND btn) {
 						accounts[i]["userId"] = x["id"].asCString();
 						writeLog("???", "%s\n%s", accounts[i]["userToken"].asCString(), temp["access_token"].asCString());
 						accounts[i]["userToken"] = temp["access_token"].asCString();
+						accounts[i]["refreshToken"] = refreshToken;
 						accounts[i]["userSkin"] = x["skins"][0]["url"].asCString();
 						accounts[i]["userSkinId"] = x["skins"][0]["id"].asCString();
 						accounts[i]["userCapes"] = Json::arrayValue;
@@ -246,6 +247,7 @@ int addOfficialAcc(HWND win, HWND btn) {
 			profile["userName"] = x["name"];
 			profile["userId"] = x["id"];
 			profile["userToken"] = temp["access_token"];
+			profile["refreshToken"] = refreshToken;
 			profile["userSkin"] = x["skins"][0]["url"];
 			profile["userSkinId"] = x["skins"][0]["id"];
 			profile["userCapes"] = Json::arrayValue;
@@ -258,8 +260,8 @@ int addOfficialAcc(HWND win, HWND btn) {
 			SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 			for (Json::Value i : accounts) {
 				strcpy(tempA, i["userName"].asCString());
-				if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
-				if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+				if (i["userType"].asInt() == 0) strcat(tempA, doTranslate("type.accounts.legacy"));
+				if (i["userType"].asInt() == 1) strcat(tempA, doTranslate("type.accounts.mojang"));
 				lisAccountsList->add(tempA);
 			}
 			lisAccountsList->show();
@@ -312,8 +314,8 @@ int addOfflineAcc(HWND win, HWND btn) {
 		SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 		for (Json::Value i : accounts) {
 			strcpy(tempA, i["userName"].asCString());
-			if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
-			if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+			if (i["userType"].asInt() == 0) strcat(tempA, doTranslate("type.accounts.legacy"));
+			if (i["userType"].asInt() == 1) strcat(tempA, doTranslate("type.accounts.mojang"));
 			lisAccountsList->add(tempA);
 		}
 		lisAccountsList->show();
@@ -353,8 +355,8 @@ int remAcc(HWND win, HWND btn) {
 				SendMessage(*lisAccountsList, LB_RESETCONTENT, 0, 0);
 				for (Json::Value i : accounts) {
 					strcpy(tempA, i["userName"].asCString());
-					if (i["userType"].asInt() == 0) strcat(tempA, " (Offline)");
-					if (i["userType"].asInt() == 1) strcat(tempA, " (Official)");
+					if (i["userType"].asInt() == 0) strcat(tempA, doTranslate("type.accounts.legacy"));
+					if (i["userType"].asInt() == 1) strcat(tempA, doTranslate("type.accounts.mojang"));
 					lisAccountsList->add(tempA);
 				}
 				lisAccountsList->setSelIndex(intAccountsSel);
@@ -372,5 +374,78 @@ int remAcc(HWND win, HWND btn) {
 		dialog->keepResponding();
 		});
 	thr.detach();
+	return 0;
+}
+
+int reloginAcc(int index) {
+	if (accounts[index]["userType"].asInt() != 1) return 1;
+	if (!accounts[index].isMember("refreshToken")) return 1;
+	if (strcmp(accounts[index]["refreshToken"].asCString(), "") == 0) return 1;
+
+	char tS[256];
+	Json::Value temp = Json::objectValue;
+	Json::Value x;
+	
+	// Get Username and token
+
+	char tmpString[256];
+	sp(strInpBox, 256, "?code=", "&lc=", tmpString);
+	char url[3200];
+	strcpyf(url, "https://login.live.com/oauth20_token.srf?client_id=00000000402b5328&client_secret=client_secret&refresh_token=%s&grant_type=refresh_token&redirect_uri=https%3a%2f%2flogin.live.com%2foauth20_desktop.srf", accounts[index]["refreshToken"].asCString());
+
+	// Step 1
+	Response resp = Get(url);
+	writeLog("ReloginAccount", resp.GetText().c_str());
+	reader.parse(resp.GetText(), temp);
+	strcpyf(url, "{\"Properties\":{\"AuthMethod\":\"RPS\", \"SiteName\":\"user.auth.xboxlive.com\", \"RpsTicket\":\"d=%s\"}, \"RelyingParty\":\"http://auth.xboxlive.com\", \"TokenType\":\"JWT\"}", temp["access_token"].asCString());
+	char refreshToken[512];
+	strcpy(refreshToken, temp["refresh_token"].asCString());
+
+	// Step 2
+	resp = Post("https://user.auth.xboxlive.com/user/authenticate", string(url));
+	reader.parse(resp.GetText(), temp);
+	strcpyf(url, "{\"Properties\":{\"SandboxId\":\"RETAIL\", \"UserTokens\":[\"%s\"]}, \"RelyingParty\":\"rp://api.minecraftservices.com/\", \"TokenType\":\"JWT\"}", temp["Token"].asCString());
+	
+	// Step 3
+	resp = Post("https://xsts.auth.xboxlive.com/xsts/authorize", string(url));
+	reader.parse(resp.GetText(), temp);
+	strcpyf(url, "{\"identityToken\":\"XBL3.0 x=%s;%s\"}", temp["DisplayClaims"]["xui"][0]["uhs"].asCString(), temp["Token"].asCString());
+	
+	// Step 4
+	resp = Post("https://api.minecraftservices.com/authentication/login_with_xbox", string(url));
+	reader.parse(resp.GetText(), temp);
+	
+	// Step 5: Has Minecraft? 
+	map<string, string> headers;
+	headers["Authorization"] = "Bearer " + temp["access_token"].asString();
+	resp = Get("https://api.minecraftservices.com/entitlements/mcstore", headers);
+	reader.parse(resp.GetText(), x);
+	int fl = 0;
+	for (Json::Value i : x["items"]) {
+		if (strcmp(i["name"].asCString(), "game_minecraft")) {
+			fl = 1;
+			break;
+		}
+	}
+	if (fl == 0) {
+		//* Hey: errorOfficial();
+		return 1;
+	}
+	
+	// Step 6
+	resp = Get("https://api.minecraftservices.com/minecraft/profile", headers);
+	reader.parse(resp.GetText(), x);
+	
+	accounts[index]["userName"] = x["name"];
+	accounts[index]["userId"] = x["id"].asCString();
+	accounts[index]["userToken"] = temp["access_token"].asCString();
+	accounts[index]["refreshToken"] = refreshToken;
+	accounts[index]["userSkin"] = x["skins"][0]["url"].asCString();
+	accounts[index]["userSkinId"] = x["skins"][0]["id"].asCString();
+	accounts[index]["userCapes"] = Json::arrayValue;
+	Json::FastWriter writer;
+	string s = writer.write(accounts);
+	RegSetKeyValueA(hData, NULL, "Accounts", REG_SZ, s.c_str(), s.size() + 1);
+	
 	return 0;
 }

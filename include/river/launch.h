@@ -1,6 +1,7 @@
 #pragma once
 
 #include <river/defines.h>
+#include <river/accounts.h>
 
 int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	
@@ -152,7 +153,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	tmpC = (char*)malloc(6402);
 	join(tmp, tmpC, 6400, ";");
 	writeLog("LaunchInstance", tmpC);
-	pgbProgress->add(40);
+	pgbProgress->add(30);
 
 	// Get Launch Level
 
@@ -385,6 +386,11 @@ MARK_SKIP:
 	}
 	pgbProgress->add(20);
 
+	// Relogin account
+
+	writeLog("LaunchInstance", "Account Login State: %d", reloginAcc(intAccountsSel));
+	pgbProgress->add(10);
+
 	// Write into output
 
 	strcpyf(output, "\"%s\" -Dminecraft.client.jar=", gottenJavaVersion);
@@ -484,17 +490,16 @@ MARK_SKIP:
 	}
 
 	CloseHandle(hWrite);
-	pgbProgress->set(100);
 
 	// Create dia'log'
 
+	pgbProgress->set(100);
 	char buf[4098];
 	RvG::Label* edi;
-	thread thr2([&, buf] {
-		minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 600, 560);
-		edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 0, 0, 600, 500, minecraftLog, WS_BORDER);
-		RvG::Button* btnEnd = new RvG::Button(doTranslate("do.mcje.end"), 500, 500, 100, 60, minecraftLog);
-		btnEnd->bindCommand([](HWND win, HWND btn)->int {
+	minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 600+15, 560+15);
+	edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 10, 10, 580, 480, minecraftLog, WS_BORDER);
+	RvG::Button* btnEnd = new RvG::Button(doTranslate("do.mcje.end"), 490, 490, 100, 60, minecraftLog);
+	btnEnd->bindCommand([](HWND win, HWND btn)->int {
 			if (TerminateProcess(pi.hProcess, 0)) {
 				MessageBoxA(win, doTranslate("prompt.mcje.end"), doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
 				CloseHandle(hRead);
@@ -506,10 +511,6 @@ MARK_SKIP:
 			}
 			return 0;
 			});
-		minecraftLog->keepResponding();
-		minecraftLog = nullptr;
-		});
-	thr2.detach();
 	thread thr([&, buf] {
 		while (ReadFile(hRead, (char*)buf, 4096, &bytesRead, NULL)) {
 			if (minecraftLog != nullptr) {
@@ -526,5 +527,7 @@ MARK_SKIP:
 		CloseHandle(pi.hProcess);
 	});
 	thr.detach();
+	minecraftLog->keepResponding();
+	minecraftLog = nullptr;
 	return 0;
 }
