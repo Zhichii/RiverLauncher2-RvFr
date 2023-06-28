@@ -10,25 +10,25 @@ RvG::ProgressBar* pgbProgress;
 
 RvG::Button* swiMinecraft;
 RvG::Container* pageMinecraft;
-RvG::Button* btnMinecraftAdd;
-RvG::Button* btnMinecraft;
-RvG::Label* labMinecraftVersionPrompt;
 RvG::ListBox* lisMinecraftVersion;
+RvG::Label* labMinecraftVersionPrompt;
+RvG::Button* btnMinecraftAdd;
+RvG::Button* btnMinecraftRemove;
+RvG::Button* btnMinecraftOpen;
 int intMinecraftSel = 0;
 
 RvG::Container* pageMinecraftDownloads;
-RvG::Button* btnMinecraftDownloads;
 RvG::ListBox* lisMinecraftDownloads;
 RvG::Label* labMinecraftDownloadsPrompt;
+RvG::Button* btnMinecraftDownloads;
 
 RvG::Button* swiAccounts;
 RvG::Container* pageAccounts;
+RvG::ListBox* lisAccountsList;
+RvG::Label* labAccountsPrompt;
 RvG::Button* btnAccountsRegister;
 RvG::Button* btnAccountsRemove;
 RvG::Button* swiAccountsAdd;
-RvG::Container* pageAccountsAdd;
-RvG::ListBox* lisAccountsList;
-RvG::Label* labAccountsPrompt;
 RvG::InputBox* inpDialogUsername;
 
 RvG::Button* swiSettings;
@@ -44,6 +44,7 @@ RvG::ListBox* lisMods;
 RvG::Button* btnModsEnable;
 RvG::Button* btnModsSwitch;
 RvG::Button* btnModsDisable;
+RvG::Button* btnModsOpen;
 
 RvG::Button* swiLang;
 RvG::Container* pageLang;

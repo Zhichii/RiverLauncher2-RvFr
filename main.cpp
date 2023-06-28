@@ -48,8 +48,33 @@ int main() {
 	pgbProgress = new RvG::ProgressBar(170, 0, 600, 25, x);
 	
 	btnLaunch = new RvG::Button("do.launch", 0, 0, 150, 150, x);
+	btnLaunch->bindCommand([](HWND win, HWND btn)->int {
+		if (lisMinecraftVersion == nullptr) {
+			MessageBoxA(win, doTranslate("prompt.mcje.notvalid"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+			return 0;
+		}
+		GetWindowTextA(*ediSettingsDir, newStr, 256);
+		lisMinecraftVersion->getText(intMinecraftSel, baseStr);
+		DWORD rec = 0;
+		if (GetHandleInformation(pi.hProcess, &rec) != 0) {
+			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+		}
+		else {
+			thread thr([win]() {
+				int n = launchInstance(baseStr, newStr, x);
+				switch (n) {
+				case 1: {
+					MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+					break;
+				}
+				}
+				});
+			thr.detach();
+		}
+		return 0;
+		});
 	btnLaunch->setTranslate("do.launch", RvG::lang);
-	
+
 	swiMinecraft = new RvG::Button("swi.mcje", 0, 175, 125, 50, x);
 	swiMinecraft->setTranslate("swi.mcje", RvG::lang);
 	
@@ -79,7 +104,7 @@ int main() {
 	labMinecraftVersionPrompt = new RvG::Label("prompt.mcje.notvalid", 0, 0, 300, 400, pageMinecraft);
 	labMinecraftVersionPrompt->setTranslate("prompt.mcje.notvalid", RvG::lang);
 
-	btnMinecraftAdd = new RvG::Button("do.mcje.swi.download", 300, 0, 160, 100, pageMinecraft);
+	btnMinecraftAdd = new RvG::Button("do.mcje.add", 300, 0, 160, 100, pageMinecraft);
 	btnMinecraftAdd->setTranslate("unfinished", RvG::lang);
 	btnMinecraftAdd->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
@@ -108,6 +133,125 @@ int main() {
 		return 0;
 		});
 
+	btnMinecraftRemove = new RvG::Button("do.mcje.remove", 300, 100, 160, 100, pageMinecraft);
+	btnMinecraftRemove->setTranslate("do.mcje.remove", RvG::lang);
+	btnMinecraftRemove->bindCommand([](HWND win, HWND btn) {
+		thread thr([]() {
+			int ind = lisMinecraftVersion->getSelIndex();
+			if (ind == -1) return 0;
+			RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+			char temp[256] = {};
+			char t2[256];
+			lisMinecraftVersion->getText(ind, t2);
+			strcpyf(temp, doTranslate("prompt.mcje.remove"), t2);
+			new RvG::Label(temp, 10, 10, 512, 20, dialog);
+			RvG::Button* btnDialogOK = new RvG::Button(doTranslate("sel.yes"), 516, 157, 100, 40, dialog);
+			RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.no"), 622, 157, 100, 40, dialog);
+			btnDialogCan->bindCommand([](HWND win, HWND btn) {
+				DestroyWindow(win);
+				return 0;
+				});
+			btnDialogOK->bindCommand([](HWND win, HWND btn)->int {
+				char temp[1026];
+				char t2[256];
+				lisMinecraftVersion->getText(lisMinecraftVersion->getSelIndex(), t2);
+				struct _stat fileStat;
+				
+				SendMessageA(*lisMinecraftVersion, LB_RESETCONTENT, 0, 0);
+				if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+					sz = 1024;
+					RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+					strcatf(temp, "\\versions\\%s", t2);
+					filesystem::remove_all(temp);
+
+					sz = 1024;
+					RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+					strcat(temp, "\\versions");
+					int sz2 = 0;
+					for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+						std::string fileName = v.path().filename().string();
+						const char* A = fileName.c_str();
+						lisMinecraftVersion->add(A);
+						sz2++;
+					}
+					int t = intMinecraftSel;
+					if (t >= sz2) t = sz2 - 1;
+					if (t < 0) t = 0;
+					lisMinecraftVersion->setSelIndex(t);
+					intMinecraftSel = t;
+					labMinecraftVersionPrompt->hide();
+				}
+				else {
+					lisMinecraftVersion->hide();
+				}
+
+				DestroyWindow(win);
+				return 0;
+				});
+			SetFocus(*dialog);
+			dialog->keepResponding();
+			});
+		thr.detach();
+		return 0;
+		});
+
+	btnMinecraftOpen = new RvG::Button("do.open", 300, 200, 160, 100, pageMinecraft);
+	btnMinecraftOpen->setTranslate("do.open", RvG::lang);
+	btnMinecraftOpen->bindCommand([](HWND win, HWND btn)->int {
+		struct _stat fileStat;
+		char temp[514];
+		char t2[514];
+		sz = 512;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\versions");
+
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+
+			int ind = lisMinecraftVersion->getSelIndex();
+			if (ind != -1) lisMinecraftVersion->getText(ind, t2);
+			strcatf(temp, "\\%s", t2);
+
+			HANDLE hRead, hWrite;
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			SECURITY_ATTRIBUTES sa;
+			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+			sa.lpSecurityDescriptor = NULL;
+			sa.bInheritHandle = TRUE;
+
+			if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+				DWORD ret = GetLastError();
+				return ret ? ret : -1;
+			}
+
+			ZeroMemory(&si, sizeof(STARTUPINFO));
+
+			si.cb = sizeof(STARTUPINFO);
+			GetStartupInfoA(&si);
+			si.hStdError = hWrite;
+			si.hStdOutput = hWrite;
+			si.wShowWindow = SW_HIDE;
+			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			char tmpS[1026];
+			strcpyf(tmpS, "cmd /c explorer %s", temp);
+			if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
+				NULL, NULL, &si, &pi)) {
+				DWORD ret = GetLastError();
+				CloseHandle(hRead);
+				CloseHandle(hWrite);
+				return ret ? ret : -1;
+			}
+
+			CloseHandle(hWrite);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			char buf[4098];
+			DWORD bytesRead;
+		}
+
+		return 0;
+		});
+
 	struct _stat fileStat;
 	char temp[1026];
 	sz = 1024;
@@ -115,7 +259,7 @@ int main() {
 	strcat(temp, "\\versions");
 
 	if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
-			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
 			std::string fileName = v.path().filename().string();
 			const char* A = fileName.c_str();
 			lisMinecraftVersion->add(A);
@@ -129,31 +273,6 @@ int main() {
 		lisMinecraftVersion->hide();
 	}
 
-	btnLaunch->bindCommand([](HWND win, HWND btn)->int {
-		if (lisMinecraftVersion == nullptr) {
-			MessageBoxA(win, doTranslate("prompt.mcje.notvalid"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
-			return 0;
-		}
-		GetWindowTextA(*ediSettingsDir, newStr, 256);
-		lisMinecraftVersion->getText(intMinecraftSel, baseStr);
-		DWORD rec = 0;
-		if (GetHandleInformation(pi.hProcess, &rec) != 0) {
-			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
-		}
-		else {
-			thread thr([win]() {
-				int n = launchInstance(baseStr, newStr, x);
-				switch (n) {
-				case 1: {
-					MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
-					break;
-				}
-				}
-				});
-			thr.detach();
-		}
-		return 0;
-	});
 
 
 
@@ -308,28 +427,26 @@ int main() {
 	btnModsEnable->bindCommand([](HWND win, HWND btn)->int {
 		sz = 1024;
 		char temp[1026];
-		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
-		strcat(temp, "\\mods");
-		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
-			if (v.is_directory()) continue;
-			std::string fileName = v.path().filename().string();
-			char A[512] = "";
-			strcpyf(A, "%s\\%s", temp, fileName.c_str());
-			if (fileName.ends_with(".disabled")) {
-				A[strlen(A) - 9] = 0;
-			}
-			char B[512] = "";
-			strcpyf(B, "%s\\%s", temp, fileName.c_str());
-			rename(B, A);
-		}
 
 		struct _stat fileStat;
 		sz = 1024;
 		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
 		strcat(temp, "\\mods");
 
-		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
 		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				strcpyf(A, "%s\\%s", temp, fileName.c_str());
+				if (fileName.ends_with(".disabled")) {
+					A[strlen(A) - 9] = 0;
+				}
+				char B[512] = "";
+				strcpyf(B, "%s\\%s", temp, fileName.c_str());
+				rename(B, A);
+			}
+			SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
 				if (v.is_directory()) continue;
 				std::string fileName = v.path().filename().string();
@@ -360,28 +477,26 @@ int main() {
 	btnModsDisable->bindCommand([](HWND win, HWND btn)->int {
 		sz = 1024;
 		char temp[1026];
-		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
-		strcat(temp, "\\mods");
-		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
-			if (v.is_directory()) continue;
-			std::string fileName = v.path().filename().string();
-			char A[512] = "";
-			strcpyf(A, "%s\\%s", temp, fileName.c_str());
-			if (!fileName.ends_with(".disabled")) {
-				strcat(A, ".disabled");
-			}
-			char B[512] = "";
-			strcpyf(B, "%s\\%s", temp, fileName.c_str());
-			rename(B, A);
-		}
 
 		struct _stat fileStat;
 		sz = 1024;
 		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
 		strcat(temp, "\\mods");
 
-		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
 		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				strcpyf(A, "%s\\%s", temp, fileName.c_str());
+				if (!fileName.ends_with(".disabled")) {
+					strcat(A, ".disabled");
+				}
+				char B[512] = "";
+				strcpyf(B, "%s\\%s", temp, fileName.c_str());
+				rename(B, A);
+			}
+			SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
 			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
 				if (v.is_directory()) continue;
 				std::string fileName = v.path().filename().string();
@@ -402,6 +517,58 @@ int main() {
 		}
 		else {
 			lisMods->hide();
+		}
+
+		return 0;
+		});
+
+	btnModsOpen = new RvG::Button("do.open", 300, 300, 160, 100, pageMods);
+	btnModsOpen->setTranslate("do.open", RvG::lang);
+	btnModsOpen->bindCommand([](HWND win, HWND btn)->int {
+		struct _stat fileStat;
+		char temp[514];
+		sz = 512;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+
+			HANDLE hRead, hWrite;
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			SECURITY_ATTRIBUTES sa;
+			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+			sa.lpSecurityDescriptor = NULL;
+			sa.bInheritHandle = TRUE;
+
+			if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+				DWORD ret = GetLastError();
+				return ret ? ret : -1;
+			}
+
+			ZeroMemory(&si, sizeof(STARTUPINFO));
+
+			si.cb = sizeof(STARTUPINFO);
+			GetStartupInfoA(&si);
+			si.hStdError = hWrite;
+			si.hStdOutput = hWrite;
+			si.wShowWindow = SW_HIDE;
+			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			char tmpS[1026];
+			strcpyf(tmpS, "cmd /c explorer %s", temp);
+			if (!CreateProcessA(NULL, tmpS, NULL, NULL, TRUE, NULL,
+				NULL, NULL, &si, &pi)) {
+				DWORD ret = GetLastError();
+				CloseHandle(hRead);
+				CloseHandle(hWrite);
+				return ret ? ret : -1;
+			}
+
+			CloseHandle(hWrite);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			char buf[4098];
+			DWORD bytesRead;
 		}
 
 		return 0;
@@ -475,6 +642,8 @@ int main() {
 		}
 
 		CloseHandle(hWrite);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 		char buf[4098];
 		DWORD bytesRead; 
 		return 0;
@@ -515,6 +684,8 @@ int main() {
 		}
 
 		CloseHandle(hWrite);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 		char buf[4098];
 		DWORD bytesRead;
 		return 0;
