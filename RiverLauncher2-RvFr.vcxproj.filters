@@ -82,5 +82,6 @@
     <None Include="lang3.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="lang\.json" />
   </ItemGroup>
 </Project>

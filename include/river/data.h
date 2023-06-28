@@ -48,16 +48,16 @@ int initData() {
 
 	Json::Value temp = Json::objectValue;
 	temp["id"] = "zh_cn";
-	temp["name"] = "中文";
-	temp["num"] = IDR_LANG1;
+	temp["name"] = "简体中文";
+	temp["num"] = IDR_LANG_CHINESE;
 	langs.append(temp);
 	temp["id"] = "en_us";
 	temp["name"] = "English";
-	temp["num"] = IDR_LANG2;
+	temp["num"] = IDR_LANG_ENGLISH;
 	langs.append(temp);
 	temp["id"] = "";
 	temp["name"] = "name.lang";
-	temp["num"] = IDR_LANG3;
+	temp["num"] = IDR_LANG_NONE;
 	langs.append(temp);
 	return 0;
 }

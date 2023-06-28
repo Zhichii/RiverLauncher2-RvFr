@@ -5,9 +5,9 @@
 #define IDI_ICON1                       101
 #define IDI_ICON2                       102
 #define IDR_JAVACLASS1                  103
-#define IDR_LANG1                       106
-#define IDR_LANG2                       107
-#define IDR_LANG3                       108
+#define IDR_LANG_CHINESE                106
+#define IDR_LANG_ENGLISH                107
+#define IDR_LANG_NONE                   108
 
 // Next default values for new objects
 // 

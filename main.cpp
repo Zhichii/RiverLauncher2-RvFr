@@ -24,7 +24,15 @@ int main() {
 	fclose(javaClass);
 	FreeResource(IDR);
 
-	hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_LANG1), L"lang");
+	hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_LANG_CHINESE), L"lang");
+	IDR = LoadResource(NULL, hRsrc);
+	size = SizeofResource(NULL, hRsrc);
+	reader.parse((const char*)LockResource(IDR), RvG::lang);
+	FreeResource(IDR);
+
+
+	RegGetValueA(hData, NULL, "SelectedLang", RRF_RT_REG_DWORD, NULL, &intLangSel, &sz);
+	hRsrc = FindResource(NULL, MAKEINTRESOURCE(langs[intLangSel]["num"].asInt()), L"lang");
 	IDR = LoadResource(NULL, hRsrc);
 	size = SizeofResource(NULL, hRsrc);
 	reader.parse((const char*)LockResource(IDR), RvG::lang);
@@ -702,15 +710,7 @@ int main() {
 	for (Json::Value val : langs) {
 		lisLangList->add(val["name"].asCString());
 	}
-	RegGetValueA(hData, NULL, "SelectedLang", RRF_RT_REG_DWORD, NULL, &intLangSel, &sz);
 	lisLangList->setSelIndex(intLangSel);
-	hRsrc = FindResource(NULL, MAKEINTRESOURCE(langs[intLangSel]["num"].asInt()), L"lang");
-	IDR = LoadResource(NULL, hRsrc);
-	size = SizeofResource(NULL, hRsrc);
-	reader.parse((const char*)LockResource(IDR), RvG::lang);
-	FreeResource(IDR);
-
-	x->translate(RvG::lang);
 
 
 	// Switch Buttons

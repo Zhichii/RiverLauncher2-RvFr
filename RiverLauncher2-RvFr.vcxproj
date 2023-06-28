@@ -173,6 +173,7 @@
   <ItemGroup>
     <None Include="getJavaMainVersion.class" />
     <None Include="lang3.bin" />
+    <None Include="lang\.json" />
     <None Include="lang\en_us.json" />
     <None Include="lang\zh_cn.json" />
   </ItemGroup>

@@ -505,7 +505,6 @@ MARK_SKIP:
 	RvG::Label* edi;
 	minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 600+15, 560+15);
 	minecraftLog->onClose([](HWND win, HWND btn) -> int {
-		//MessageBoxA(win, "ND", "HW", MB_OK | MB_ICONINFORMATION);
 		CloseHandle(hWrite);
 		CloseHandle(hRead);
 		return 0;
