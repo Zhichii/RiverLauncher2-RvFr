@@ -33,12 +33,17 @@ DWORD WINAPI downloadAsset(LPVOID lpParam) {
 int download(HWND win, HWND btn) {
 	thread thr([=]()->int {
 		pgbProgress->set(0);
-		char versionId[256];
+		char versionId[256] = {};
+		int n = lisMinecraftDownloads->getSelIndex();
+		if (n == -1) {
+			MessageBoxA(win, doTranslate("prompt.mcje.download.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+			return 1;
+		}
 		lisMinecraftDownloads->getText(lisMinecraftDownloads->getSelIndex(), versionId);
 		char tmpS[512];
 		GetWindowTextA(*ediSettingsDir, tmpS, 512);
 		strcatf(tmpS, "\\versions\\%s", versionId);
-		MessageBoxA(win, tmpS, "Test", MB_OK | MB_ICONINFORMATION);
+		//MessageBoxA(win, tmpS, "Test", MB_OK | MB_ICONINFORMATION);
 		int index = lisMinecraftDownloads->getSelIndex();
 
 		// Get Json
@@ -62,22 +67,18 @@ int download(HWND win, HWND btn) {
 		double step = 30.0 / tempValue["libraries"].size();
 		progress = 5;
 
-		char* temp;
 		int size;
 		for (int i = 0; i < tempValue["libraries"].size(); i++) {
 			try {
+				char* tempChars;
 				if (tempValue["libraries"][i]["downloads"].isMember("artifact")) {
 					strcpyf(tmpS2, "%s\\libraries\\%s", tmpS3, tempValue["libraries"][i]["downloads"]["artifact"]["path"].asCString());
 					for (int j = 0; j < 512; j++) {
 						if (tmpS2[j] == '/') tmpS2[j] = '\\';
 					}
 					int size;
-					winGetHttps(&temp, tempValue["libraries"][i]["downloads"]["artifact"]["url"].asCString(), &size);
+					winGetHttps(&tempChars, tempValue["libraries"][i]["downloads"]["artifact"]["url"].asCString(), &size);
 					MakeSureDirectoryPathExists(tmpS2);
-					FILE* fp = fopen(tmpS2, "wb");
-					fwrite(temp, 1, size, fp);
-					fclose(fp);
-					free(temp);
 				}
 				if (tempValue["libraries"][i]["downloads"].isMember("classifiers") &&
 					tempValue["libraries"][i]["downloads"]["classifiers"].isMember("natives-windows")) {
@@ -85,14 +86,13 @@ int download(HWND win, HWND btn) {
 					for (int j = 0; j < 512; j++) {
 						if (tmpS2[j] == '/') tmpS2[j] = '\\';
 					}
-					winGetHttps(&temp, tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["url"].asCString(), &size);
+					winGetHttps(&tempChars, tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["url"].asCString(), &size);
 					MakeSureDirectoryPathExists(tmpS2);
-					FILE* fp = fopen(tmpS2, "wb");
-					fwrite(temp, 1, size, fp);
-					fclose(fp);
-					free(temp);
 				}
-				else;
+				FILE* fp = fopen(tmpS2, "wb");
+				fwrite(tempChars, 1, size, fp);
+				fclose(fp);
+				free(tempChars);
 			}
 			catch (const char* msg) {
 				DebugBreak();
@@ -101,6 +101,10 @@ int download(HWND win, HWND btn) {
 			pgbProgress->set((int)progress);
 			UpdateWindow(*pgbProgress);
 		}
+		for (pair<string, HINTERNET> hConnectPair : hosts) {
+			InternetCloseHandle(hConnectPair.second);
+		}
+		InternetCloseHandle(hInternet);
 		pgbProgress->set(35);
 
 		// Get Game Jar

@@ -46,13 +46,18 @@ int initData() {
 	if (RegQueryValueEx(hData, L"LatestKnown", NULL, &dwType, NULL, NULL) != ERROR_SUCCESS)
 		RegSetKeyValueA(hData, NULL, "LatestKnown", REG_SZ, "\0", 1);
 
-	langs[0] = Json::objectValue;
-	langs[0]["id"] = "zh_cn";
-	langs[0]["name"] = "中文";
-	langs[0]["num"] = IDR_LANG1;
-	langs[1] = Json::objectValue;
-	langs[1]["id"] = "en_us";
-	langs[1]["name"] = "English";
-	langs[1]["num"] = IDR_LANG2;
+	Json::Value temp = Json::objectValue;
+	temp["id"] = "zh_cn";
+	temp["name"] = "中文";
+	temp["num"] = IDR_LANG1;
+	langs.append(temp);
+	temp["id"] = "en_us";
+	temp["name"] = "English";
+	temp["num"] = IDR_LANG2;
+	langs.append(temp);
+	temp["id"] = "";
+	temp["name"] = "name.lang";
+	temp["num"] = IDR_LANG3;
+	langs.append(temp);
 	return 0;
 }

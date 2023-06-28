@@ -39,6 +39,11 @@ RvG::InputBox* ediSettingsHei;
 
 RvG::Button* swiMods;
 RvG::Container* pageMods;
+RvG::Label* labModsPrompt;
+RvG::ListBox* lisMods;
+RvG::Button* btnModsEnable;
+RvG::Button* btnModsSwitch;
+RvG::Button* btnModsDisable;
 
 RvG::Button* swiLang;
 RvG::Container* pageLang;

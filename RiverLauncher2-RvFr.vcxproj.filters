@@ -79,5 +79,8 @@
     </None>
     <None Include="lang\zh_cn.json" />
     <None Include="lang\en_us.json" />
+    <None Include="lang3.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

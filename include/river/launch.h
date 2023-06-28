@@ -24,7 +24,7 @@ int launchInstance(const char* versionId, const char* dir, RvG::Window* x) {
 	if ((_stat(fvJson, &fileStat) == 0)) {}
 	else return 1;
 	if (accounts.size() == 0) {
-		MessageBoxA(*x, doTranslate("prompt.accounts.no"), doTranslate("error"), MB_OK | MB_ICONERROR);
+		MessageBoxA(*x, doTranslate("prompt.accounts.no"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
 		return 0;
 	}
 
@@ -256,7 +256,7 @@ MARK_UNABLELAUNCHING:
 	free(tmpC);
 	free(gameArgC);
 	free(jvmArgC);
-	MessageBoxA(*x, doTranslate("prompt.mcje.notlaunch"), doTranslate("error"), MB_OK | MB_ICONERROR);
+	MessageBoxA(*x, doTranslate("prompt.mcje.notlaunch"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
 	return 0;
 	
 MARK_SKIP:
@@ -388,7 +388,13 @@ MARK_SKIP:
 
 	// Relogin account
 
-	writeLog("LaunchInstance", "Account Login State: %d", reloginAcc(intAccountsSel));
+	try {
+		writeLog("LaunchInstance", "Account Login State: %d", reloginAcc(intAccountsSel));
+	}
+	catch (const char* e) {
+		writeLog("ReloginAccount", "Unable to relogin! ");
+		MessageBoxA(*x, doTranslate("prompt.accounts.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+	}
 	pgbProgress->add(10);
 
 	// Write into output
@@ -459,6 +465,7 @@ MARK_SKIP:
 
 	// Launch
 
+	pi.hProcess = 0;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
@@ -497,35 +504,54 @@ MARK_SKIP:
 	char buf[4098];
 	RvG::Label* edi;
 	minecraftLog = new RvG::Window(doTranslate("prompt.mcje.log"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 600+15, 560+15);
+	minecraftLog->onClose([](HWND win, HWND btn) -> int {
+		//MessageBoxA(win, "ND", "HW", MB_OK | MB_ICONINFORMATION);
+		CloseHandle(hWrite);
+		CloseHandle(hRead);
+		return 0;
+		});
 	edi = new RvG::Label(doTranslate("prompt.mcje.loghere"), 10, 10, 580, 480, minecraftLog, WS_BORDER);
 	RvG::Button* btnEnd = new RvG::Button(doTranslate("do.mcje.end"), 490, 490, 100, 60, minecraftLog);
 	btnEnd->bindCommand([](HWND win, HWND btn)->int {
-			if (TerminateProcess(pi.hProcess, 0)) {
-				MessageBoxA(win, doTranslate("prompt.mcje.end"), doTranslate("prompt"), MB_OK | MB_ICONINFORMATION);
-				CloseHandle(hRead);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-			}
-			else {
-				MessageBoxA(win, doTranslate("prompt.mcje.notend"), doTranslate("error"), MB_OK | MB_ICONERROR);
-			}
-			return 0;
-			});
+		if (TerminateProcess(pi.hProcess, 0)) {
+			CloseHandle(hRead);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			beginTime = 0;
+			MessageBoxA(win, doTranslate("prompt.mcje.end"), doTranslate("prompt", 1), MB_OK | MB_ICONINFORMATION);
+		}
+		else {
+			pi.hProcess = 0;
+			MessageBoxA(win, doTranslate("prompt.mcje.notend"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+		}
+		return 0;
+		});
+	thread thr2([&]() {
+		Sleep(3 * 1000);
+		if (pi.hProcess != 0)
+			MessageBoxA(*minecraftLog, doTranslate("prompt.mcje.able"), doTranslate("prompt", 1), MB_OK | MB_ICONINFORMATION);
+		});
+	thr2.detach();
 	thread thr([&, buf] {
+		beginTime = time(nullptr);
 		while (ReadFile(hRead, (char*)buf, 4096, &bytesRead, NULL)) {
 			if (minecraftLog != nullptr) {
 				SetWindowTextA(edi->hWnd, buf);
 				UpdateWindow(minecraftLog->hWnd);
 			}
 		}
-		if (minecraftLog != nullptr) {
-			SetWindowTextA(edi->hWnd, doTranslate("prompt.mcje.processended"));
-			UpdateWindow(minecraftLog->hWnd);
-		}
 		CloseHandle(hRead);
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
-	});
+		pi.hProcess = 0;
+		if ((time(nullptr) - beginTime) < 3) {
+			MessageBoxA(*minecraftLog, doTranslate("prompt.mcje.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+		}
+		else if (minecraftLog != nullptr) {
+			SetWindowTextA(edi->hWnd, doTranslate("prompt.mcje.processended"));
+			UpdateWindow(minecraftLog->hWnd);
+		}
+		});
 	thr.detach();
 	minecraftLog->keepResponding();
 	minecraftLog = nullptr;

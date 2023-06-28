@@ -35,6 +35,12 @@ int main() {
 
 	x = new RvG::Window("name.launcher", 0);
 	x->setTranslate("name.launcher", RvG::lang);
+	x->onClose([](HWND win, HWND btn) -> int {
+		//MessageBoxA(win, "ND", "HW", MB_OK | MB_ICONINFORMATION);
+		CloseHandle(hWrite);
+		CloseHandle(hRead);
+		return 0;
+		});
 	
 	SendMessage(*x, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON2)));
 	SendMessage(*x, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(RvG::_hInstance, MAKEINTRESOURCE(IDI_ICON1)));
@@ -69,8 +75,12 @@ int main() {
 
 	pageMinecraft = new RvG::Container(170, 25, 600, 400, x);
 
-	btnMinecraftAdd = new RvG::Button("do.mcje.swi.download", 200, 0, 160, 100, pageMinecraft);
-	btnMinecraftAdd->setTranslate("do.mcje.swi.download", RvG::lang);
+	lisMinecraftVersion = new RvG::ListBox(0, 0, 300, 400, pageMinecraft, WS_VSCROLL);
+	labMinecraftVersionPrompt = new RvG::Label("prompt.mcje.notvalid", 0, 0, 300, 400, pageMinecraft);
+	labMinecraftVersionPrompt->setTranslate("prompt.mcje.notvalid", RvG::lang);
+
+	btnMinecraftAdd = new RvG::Button("do.mcje.swi.download", 300, 0, 160, 100, pageMinecraft);
+	btnMinecraftAdd->setTranslate("unfinished", RvG::lang);
 	btnMinecraftAdd->bindCommand([](HWND win, HWND btn)->int {
 		curPage->hide();
 		if (hasPage2) {
@@ -80,21 +90,23 @@ int main() {
 		hasPage2 = 1;
 		curPage2 = pageMinecraftDownloads;
 		curPage2->show();
-		if (versionManifest.size() != 0) {
-			lisMinecraftDownloads->show();
-			labMinecraftDownloadsPrompt->hide();
+		if (versionManifest.isArray()) {
+			if (versionManifest.size() != 0) {
+				lisMinecraftDownloads->show();
+				labMinecraftDownloadsPrompt->hide();
+			}
+			else {
+				labMinecraftDownloadsPrompt->show();
+				lisMinecraftDownloads->hide();
+			}
 		}
 		else {
+			labMinecraftDownloadsPrompt->setTranslate("prompt.mcje.download.unable.manifest", RvG::lang);
 			labMinecraftDownloadsPrompt->show();
 			lisMinecraftDownloads->hide();
 		}
 		return 0;
 		});
-
-	lisMinecraftVersion = new RvG::ListBox(0, 0, 200, 400, pageMinecraft, WS_VSCROLL);
-	
-	labMinecraftVersionPrompt = new RvG::Label("prompt.mcje.notvalid", 0, 0, 200, 100, pageMinecraft);
-	labMinecraftVersionPrompt->setTranslate("prompt.mcje.notvalid", RvG::lang);
 
 	struct _stat fileStat;
 	char temp[1026];
@@ -119,21 +131,21 @@ int main() {
 
 	btnLaunch->bindCommand([](HWND win, HWND btn)->int {
 		if (lisMinecraftVersion == nullptr) {
-			MessageBoxA(win, doTranslate("prompt.mcje.notvalid"), doTranslate("error"), MB_OK | MB_ICONERROR);
+			MessageBoxA(win, doTranslate("prompt.mcje.notvalid"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
 			return 0;
 		}
 		GetWindowTextA(*ediSettingsDir, newStr, 256);
 		lisMinecraftVersion->getText(intMinecraftSel, baseStr);
 		DWORD rec = 0;
 		if (GetHandleInformation(pi.hProcess, &rec) != 0) {
-			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error"), MB_OK | MB_ICONERROR);
+			MessageBoxA(win, doTranslate("prompt.mcje.already"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
 		}
 		else {
 			thread thr([win]() {
 				int n = launchInstance(baseStr, newStr, x);
 				switch (n) {
 				case 1: {
-					MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error"), MB_OK | MB_ICONERROR);
+					MessageBoxA(win, doTranslate("prompt.mcje.error"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
 					break;
 				}
 				}
@@ -148,15 +160,14 @@ int main() {
 	// Page Minecraft Downloads
 
 	pageMinecraftDownloads = new RvG::Container(170, 25, 600, 400, x);
-	
-	btnMinecraftDownloads = new RvG::Button("do.mcje.download", 200, 0, 160, 100, pageMinecraftDownloads);
-	btnMinecraftDownloads->setTranslate("do.mcje.download", RvG::lang);
-	btnMinecraftDownloads->bindCommand(download);
 
-	labMinecraftDownloadsPrompt = new RvG::Label("prompt.mcje.download.getting", 0, 0, 200, 100, pageMinecraftDownloads);
+	lisMinecraftDownloads = new RvG::ListBox(0, 0, 300, 400, pageMinecraftDownloads, WS_VSCROLL);
+	labMinecraftDownloadsPrompt = new RvG::Label("prompt.mcje.download.getting", 0, 0, 300, 400, pageMinecraftDownloads);
 	labMinecraftDownloadsPrompt->setTranslate("prompt.mcje.download.getting", RvG::lang);
 	
-	lisMinecraftDownloads = new RvG::ListBox(0, 0, 200, 400, pageMinecraftDownloads, WS_VSCROLL);
+	btnMinecraftDownloads = new RvG::Button("do.mcje.download", 300, 0, 160, 100, pageMinecraftDownloads);
+	btnMinecraftDownloads->setTranslate("do.mcje.download", RvG::lang);
+	btnMinecraftDownloads->bindCommand(download);
 
 
 
@@ -164,16 +175,15 @@ int main() {
 
 	pageAccounts = new RvG::Container(170, 25, 600, 400, x);
 	
-	lisAccountsList = new RvG::ListBox(0, 0, 200, 400, pageAccounts, WS_VSCROLL);
-	
-	labAccountsPrompt = new RvG::Label("prompt.accounts.no", 0, 0, 200, 400, pageAccounts);
+	lisAccountsList = new RvG::ListBox(0, 0, 300, 400, pageAccounts, WS_VSCROLL);
+	labAccountsPrompt = new RvG::Label("prompt.accounts.no", 0, 0, 300, 400, pageAccounts);
 	labAccountsPrompt->setTranslate("prompt.accounts.no", RvG::lang);
 
-	btnAccountsRegister = new RvG::Button("do.accounts.add", 200, 0, 160, 100, pageAccounts);
+	btnAccountsRegister = new RvG::Button("do.accounts.add", 300, 0, 160, 100, pageAccounts);
 	btnAccountsRegister->setTranslate("do.accounts.add", RvG::lang);
 	btnAccountsRegister->bindCommand(addAcc);
 	
-	btnAccountsRemove = new RvG::Button("do.accounts.remove", 200, 100, 160, 100, pageAccounts);
+	btnAccountsRemove = new RvG::Button("do.accounts.remove", 300, 100, 160, 100, pageAccounts);
 	btnAccountsRemove->setTranslate("do.accounts.remove", RvG::lang);
 	btnAccountsRemove->bindCommand(remAcc);
 	
@@ -200,24 +210,229 @@ int main() {
 	// Page Settings
 	
 	pageSettings = new RvG::Container(170, 25, 600, 400, x);
-	
-	sz = 1024;
-	RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempA, &sz);
-	
-	RvG::ParentWidget* t = new RvG::Label("value.settings.dir", 3, 5, 200, 20, pageSettings);
+
+	new RvG::Label("x", 200, 35, 15, 20, pageSettings, SS_CENTER);
+	RvG::ParentWidget* t;
+	t = new RvG::Label("value.settings.dir", 3, 5, 125, 20, pageSettings);
 	t -> setTranslate("value.settings.dir", RvG::lang);
-	
-	ediSettingsDir = new RvG::InputBox(tempA, 150, 0, 300, 25, pageSettings);
-	
 	t = new RvG::Label("value.settings.size", 3, 35, 200, 20, pageSettings);
 	t -> setTranslate("value.settings.size", RvG::lang);
+
+	sz = 1024;
+	RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, tempA, &sz);
+	ediSettingsDir = new RvG::InputBox(tempA, 150, 0, 300, 25, pageSettings);
 	
 	sz = 4;
 	RegGetValueA(hData, NULL, "WindowWidth", RRF_RT_REG_DWORD, NULL, &intSettingsWid, &sz);
 	ediSettingsWid = new RvG::InputBox(_itoa(intSettingsWid, tempA, 10), 150, 30, 50, 25, pageSettings);
-	new RvG::Label("x", 200, 35, 15, 20, pageSettings, SS_CENTER);
+
 	RegGetValueA(hData, NULL, "WindowHeight", RRF_RT_REG_DWORD, NULL, &intSettingsHei, &sz);
 	ediSettingsHei = new RvG::InputBox(_itoa(intSettingsHei, tempA, 10), 215, 30, 50, 25, pageSettings);
+
+
+
+	// Page Mods
+
+	pageMods = new RvG::Container(170, 25, 600, 400, x);
+
+	lisMods = new RvG::ListBox(0, 0, 300, 400, pageMods, WS_VSCROLL);
+	labModsPrompt = new RvG::Label("prompt.mods.no", 0, 0, 300, 400, pageMods, WS_VSCROLL);
+	labModsPrompt->setTranslate("prompt.mods.no", RvG::lang);
+
+	btnModsSwitch = new RvG::Button("do.mods.switch", 300, 0, 160, 100, pageMods);
+	btnModsSwitch->setTranslate("do.mods.switch", RvG::lang);
+	btnModsSwitch->bindCommand([](HWND win, HWND btn)->int {
+		int ind = lisMods->getSelIndex();
+		if (ind == -1) return 0;
+		int i = 0;
+		sz = 1024;
+		char temp[1026];
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+			if (v.is_directory()) continue;
+			if (i != ind) {
+				i++;
+				continue;
+			}
+			std::string fileName = v.path().filename().string();
+			char A[512] = "";
+			strcpyf(A, "%s\\%s", temp, fileName.c_str());
+			if (fileName.ends_with(".disabled")) {
+				A[strlen(A)-9] = 0;
+			}
+			else {
+				strcat(A, ".disabled");
+			}
+			char B[512] = "";
+			strcpyf(B, "%s\\%s", temp, fileName.c_str());
+			rename(B, A);
+			break;
+		}
+
+		struct _stat fileStat;
+		sz = 1024;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+
+		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				if (fileName.ends_with(".disabled")) {
+					strcpy(A, doTranslate("type.mods.disabled"));
+				}
+				else {
+					strcpy(A, doTranslate("type.mods.enabled"));
+				}
+				const int tempInt = strlen(A);
+				strcat(A, fileName.c_str());
+				int n = find(A + tempInt, ".disabled");
+				if (n != -1) A[n + tempInt] = 0;
+				lisMods->add(A);
+			}
+			labModsPrompt->hide();
+		}
+		else {
+			lisMods->hide();
+		}
+		lisMods->setSelIndex(ind);
+
+		return 0;
+		});
+
+	btnModsEnable = new RvG::Button("do.mods.enable", 300, 100, 160, 100, pageMods);
+	btnModsEnable->setTranslate("do.mods.enable", RvG::lang);
+	btnModsEnable->bindCommand([](HWND win, HWND btn)->int {
+		sz = 1024;
+		char temp[1026];
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+			if (v.is_directory()) continue;
+			std::string fileName = v.path().filename().string();
+			char A[512] = "";
+			strcpyf(A, "%s\\%s", temp, fileName.c_str());
+			if (fileName.ends_with(".disabled")) {
+				A[strlen(A) - 9] = 0;
+			}
+			char B[512] = "";
+			strcpyf(B, "%s\\%s", temp, fileName.c_str());
+			rename(B, A);
+		}
+
+		struct _stat fileStat;
+		sz = 1024;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+
+		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				if (fileName.ends_with(".disabled")) {
+					strcpy(A, doTranslate("type.mods.disabled"));
+				}
+				else {
+					strcpy(A, doTranslate("type.mods.enabled"));
+				}
+				const int tempInt = strlen(A);
+				strcat(A, fileName.c_str());
+				int n = find(A + tempInt, ".disabled");
+				if (n != -1) A[n + tempInt] = 0;
+				lisMods->add(A);
+			}
+			labModsPrompt->hide();
+		}
+		else {
+			lisMods->hide();
+		}
+
+		return 0;
+		});
+
+	btnModsDisable = new RvG::Button("do.mods.disable", 300, 200, 160, 100, pageMods);
+	btnModsDisable->setTranslate("do.mods.disable", RvG::lang);
+	btnModsDisable->bindCommand([](HWND win, HWND btn)->int {
+		sz = 1024;
+		char temp[1026];
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+			if (v.is_directory()) continue;
+			std::string fileName = v.path().filename().string();
+			char A[512] = "";
+			strcpyf(A, "%s\\%s", temp, fileName.c_str());
+			if (!fileName.ends_with(".disabled")) {
+				strcat(A, ".disabled");
+			}
+			char B[512] = "";
+			strcpyf(B, "%s\\%s", temp, fileName.c_str());
+			rename(B, A);
+		}
+
+		struct _stat fileStat;
+		sz = 1024;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+
+		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				if (fileName.ends_with(".disabled")) {
+					strcpy(A, doTranslate("type.mods.disabled"));
+				}
+				else {
+					strcpy(A, doTranslate("type.mods.enabled"));
+				}
+				const int tempInt = strlen(A);
+				strcat(A, fileName.c_str());
+				int n = find(A + tempInt, ".disabled");
+				if (n != -1) A[n + tempInt] = 0;
+				lisMods->add(A);
+			}
+			labModsPrompt->hide();
+		}
+		else {
+			lisMods->hide();
+		}
+
+		return 0;
+		});
+
+	sz = 1024;
+	RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+	strcat(temp, "\\mods");
+
+	if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+		for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+			if (v.is_directory()) continue;
+			std::string fileName = v.path().filename().string();
+			char A[512] = "";
+			if (fileName.ends_with(".disabled")) {
+				strcpy(A, doTranslate("type.mods.disabled"));
+			}
+			else {
+				strcpy(A, doTranslate("type.mods.enabled"));
+			}
+			const int tempInt = strlen(A);
+			strcat(A, fileName.c_str());
+			int n = find(A + tempInt, ".disabled");
+			if (n != -1) A[n + tempInt] = 0;
+			lisMods->add(A);
+		}
+		labModsPrompt->hide();
+	}
+	else {
+		lisMods->hide();
+	}
 
 
 
@@ -310,7 +525,9 @@ int main() {
 	// Page Languages
 
 	pageLang = new RvG::Container(170, 25, 600, 400, x);
-	lisLangList = new RvG::ListBox(0, 0, 200, 400, pageLang, WS_VSCROLL);
+
+	lisLangList = new RvG::ListBox(0, 0, 300, 400, pageLang, WS_VSCROLL);
+
 	for (Json::Value val : langs) {
 		lisLangList->add(val["name"].asCString());
 	}
@@ -321,6 +538,7 @@ int main() {
 	size = SizeofResource(NULL, hRsrc);
 	reader.parse((const char*)LockResource(IDR), RvG::lang);
 	FreeResource(IDR);
+
 	x->translate(RvG::lang);
 
 
@@ -395,6 +613,43 @@ int main() {
 		return 0;
 		});
 	swiMods->bindCommand([](HWND win, HWND btn)->int {
+		curPage->hide();
+		curPage = pageMods;
+		if (hasPage2) {
+			curPage2->hide();
+			hasPage2 = 0;
+		}
+		curPage->show();
+
+		SendMessage(*lisMods, LB_RESETCONTENT, 0, 0);
+		struct _stat fileStat;
+		char temp[1026];
+		sz = 1024;
+		RegGetValueA(hData, NULL, "MinecraftDirectory", RRF_RT_REG_SZ, NULL, temp, &sz);
+		strcat(temp, "\\mods");
+
+		if ((_stat(temp, &fileStat) == 0) && (fileStat.st_mode & _S_IFDIR)) {
+			for (auto& v : std::filesystem::directory_iterator::directory_iterator(temp)) {
+				if (v.is_directory()) continue;
+				std::string fileName = v.path().filename().string();
+				char A[512] = "";
+				if (fileName.ends_with(".disabled")) {
+					strcpy(A, doTranslate("type.mods.disabled"));
+				}
+				else {
+					strcpy(A, doTranslate("type.mods.enabled"));
+				}
+				const int tempInt = strlen(A);
+				strcat(A, fileName.c_str());
+				int n = find(A + tempInt, ".disabled");
+				if (n != -1) A[n + tempInt] = 0;
+				lisMods->add(A);
+			}
+			labModsPrompt->hide();
+		}
+		else {
+			lisMods->hide();
+		}
 		return 0;
 		});
 	swiMinecraftBE->bindCommand([](HWND win, HWND btn)->int {
@@ -485,6 +740,7 @@ int main() {
 		}
 		catch (const char* msg){
 			writeLog("Requesting", msg);
+			versionManifest = "unable to get";
 		}
 		return 0;
 	});
@@ -498,9 +754,15 @@ int main() {
 	pageMinecraftDownloads->hide();
 	pageAccounts->hide();
 	pageSettings->hide();
+	pageMods->hide();
 	pageMinecraftBE->hide();
 	pageLang->hide();
 
 	x->keepResponding();
+
+	for (pair<string, HINTERNET> hConnectPair : hosts) {
+		InternetCloseHandle(hConnectPair.second);
+	}
+	InternetCloseHandle(hInternet);
 	return 0;
 }

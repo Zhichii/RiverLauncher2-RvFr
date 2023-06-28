@@ -20,6 +20,7 @@
 #include <river/ui.h>
 #include <mutex>
 #include <ImageHlp.h>
+#include <ctime>
 #include "resource.h"
 #define INT_MAX 2147483647
 #define ALLOC 4096
@@ -28,6 +29,7 @@ using namespace std;
 using namespace requests;
 
 char loadStringBuf[258];
+char loadStringBuf2[258];
 Json::Reader reader;
 FILE* programmeLog = fopen("RvL\\Log.txt", "w");
 HKEY hData;
@@ -43,11 +45,9 @@ RvG::Button* staticBtn;
 Json::Value versionManifest = Json::arrayValue;
 HINTERNET hInternet;
 map<string, HINTERNET> hosts;
-
+time_t beginTime;
 char baseStr[258];
 char newStr[258];
-
-
 HANDLE hRead, hWrite;
 STARTUPINFOA si;
 PROCESS_INFORMATION pi;
@@ -480,8 +480,10 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 		hInternet = InternetOpenA("RiverLauncher2", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 		if (hInternet == NULL) {
 			int error = GetLastError();
-			writeLog("InternetOpenA", "%d", error);
-			return error;
+			char t2[256];
+			strcpyf(t2, "%d", error);
+			writeLog("InternetOpenA", t2);
+			throw error;
 		}
 	}
 	DWORD d = 0;
@@ -489,21 +491,28 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 	if (!hosts.contains(host)) {
 		hConnect = InternetConnectA(hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)&d);
 	}
+	else {
+		hConnect = hosts[host];
+	}
 	if (hConnect == NULL) {
 		int error = GetLastError();
-		writeLog("InternetConnectA", "%d", error);
-		InternetCloseHandle(hInternet);
-		return error;
+		char t2[256];
+		strcpyf(t2, "%d", error);
+		writeLog("InternetConnectA", t2);
+		throw error;
 	}
 	hosts[host] = hConnect;
 	PCSTR rgpszAcceptTypes[] = { "*/*", NULL };
 	HINTERNET hRequest = HttpOpenRequestA(hConnect, "GET", file, "HTTP/1.1", NULL, rgpszAcceptTypes, flags, 0);
 	if (hRequest == NULL) {
 		int error = GetLastError();
-		writeLog("HttpOpenRequestA", "%d", error);
 		InternetCloseHandle(hConnect);
+		hosts.erase(host);
 		InternetCloseHandle(hInternet);
-		return error;
+		char t2[256];
+		strcpyf(t2, "%d", error);
+		writeLog("HttpOpenRequestA", t2);
+		throw error;
 	}
 	d = HttpSendRequestA(hRequest, NULL, 0, NULL, 0);
 	if (d == FALSE) {
@@ -511,8 +520,12 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 		writeLog("HttpSendRequestA", "%d", error);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
+		hosts.erase(host);
 		InternetCloseHandle(hInternet);
-		return error;
+		char t2[256];
+		strcpyf(t2, "%d", error);
+		writeLog("HttpSendRequestA", t2);
+		throw error;
 	}
 	char buf[10];
 	DWORD len = 10;
@@ -521,8 +534,12 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 		writeLog("HttpQueryInfoA", "%d", error);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
+		hosts.erase(host);
 		InternetCloseHandle(hInternet);
-		return error;
+		char t2[256];
+		strcpyf(t2, "%d", error);
+		writeLog("HttpQueryInfoA", t2);
+		throw error;
 	}
 	char* temp = (char*)malloc(atoi(buf) + 2);
 	if (oSize != nullptr) *oSize = atoi(buf);
@@ -534,18 +551,31 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 		free(temp);
 		InternetCloseHandle(hRequest);
 		InternetCloseHandle(hConnect);
+		hosts.erase(host);
 		InternetCloseHandle(hInternet);
-		return error;
+		char t2[256];
+		strcpyf(t2, "%d", error);
+		writeLog("HttpQueryInfoA", t2);
+		throw error;
 	}
 	InternetCloseHandle(hRequest);
-	InternetCloseHandle(hConnect);
-	InternetCloseHandle(hInternet);
 	*out = temp;
 	return 0;
 }
 
-char* doTranslate(const char* translationKey) {
-	if ((RvG::lang).isMember(translationKey)) strcpy(loadStringBuf, (RvG::lang)[translationKey].asCString());
-	else strcpy(loadStringBuf, translationKey);
-	return loadStringBuf;
+const char* doTranslate(const char* translationKey, int id = 0) {
+	char* lsBuf;
+	switch (id) {
+	case 0: {
+		lsBuf = loadStringBuf;
+		break;
+	}
+	case 1: {
+		lsBuf = loadStringBuf2;
+		break;
+	}
+	}
+	if ((RvG::lang).isMember(translationKey)) strcpy(lsBuf, (RvG::lang)[translationKey].asCString());
+	else strcpy(lsBuf, translationKey);
+	return lsBuf;
 }

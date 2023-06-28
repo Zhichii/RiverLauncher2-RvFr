@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{31696591-6b97-49aa-af4e-25a65f6f448a}</ProjectGuid>
     <RootNamespace>RiverLauncher2RvFr</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.20348.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -172,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="getJavaMainVersion.class" />
+    <None Include="lang3.bin" />
     <None Include="lang\en_us.json" />
     <None Include="lang\zh_cn.json" />
   </ItemGroup>
