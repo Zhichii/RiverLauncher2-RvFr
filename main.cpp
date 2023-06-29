@@ -44,9 +44,10 @@ int main() {
 	x = new RvG::Window("name.launcher", 0);
 	x->setTranslate("name.launcher", RvG::lang);
 	x->onClose([](HWND win, HWND btn) -> int {
-		//MessageBoxA(win, "ND", "HW", MB_OK | MB_ICONINFORMATION);
 		CloseHandle(hWrite);
 		CloseHandle(hRead);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 		return 0;
 		});
 	

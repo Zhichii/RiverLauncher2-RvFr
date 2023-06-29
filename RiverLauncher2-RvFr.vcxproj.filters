@@ -56,6 +56,12 @@
     <ClInclude Include="include\river\download.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\rvtools\header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rvtools\str.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

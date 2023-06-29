@@ -156,6 +156,8 @@
     <ClInclude Include="include\river\javaDownload.h" />
     <ClInclude Include="include\river\launch.h" />
     <ClInclude Include="include\river\ui.h" />
+    <ClInclude Include="include\rvtools\header.h" />
+    <ClInclude Include="include\rvtools\str.h" />
     <ClInclude Include="include\zip\unzip.h" />
     <ClInclude Include="include\zip\zip.h" />
     <ClInclude Include="resource.h" />

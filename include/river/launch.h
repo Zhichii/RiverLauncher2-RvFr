@@ -533,10 +533,14 @@ MARK_SKIP:
 	thr2.detach();
 	thread thr([&, buf] {
 		beginTime = time(nullptr);
-		while (ReadFile(hRead, (char*)buf, 4096, &bytesRead, NULL)) {
+		DWORD br;
+		while (ReadFile(hRead, (char*)buf, 4096, &br, NULL)) {
 			if (minecraftLog != nullptr) {
 				SetWindowTextA(edi->hWnd, buf);
 				UpdateWindow(minecraftLog->hWnd);
+			}
+			else {
+				break;
 			}
 		}
 		CloseHandle(hRead);
@@ -544,11 +548,18 @@ MARK_SKIP:
 		CloseHandle(pi.hProcess);
 		pi.hProcess = 0;
 		if ((time(nullptr) - beginTime) < 3) {
-			MessageBoxA(*minecraftLog, doTranslate("prompt.mcje.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+			if (minecraftLog != nullptr) {
+				MessageBoxA(*minecraftLog, doTranslate("prompt.mcje.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+			}
+			else {
+				MessageBoxA(nullptr, doTranslate("prompt.mcje.unable"), doTranslate("error", 1), MB_OK | MB_ICONERROR);
+			}
 		}
-		else if (minecraftLog != nullptr) {
+		else {
 			SetWindowTextA(edi->hWnd, doTranslate("prompt.mcje.processended"));
-			UpdateWindow(minecraftLog->hWnd);
+			if (minecraftLog != nullptr) {
+				UpdateWindow(minecraftLog->hWnd);
+			}
 		}
 		});
 	thr.detach();
