@@ -53,6 +53,8 @@ STARTUPINFOA si;
 PROCESS_INFORMATION pi;
 double progress = 0;
 std::mutex mtx;
+HANDLE hFontHandle;
+HFONT hFont;
 
 /*
  * Minecraft [Download]
@@ -485,6 +487,10 @@ int winGetHttps(char** out, const char* url, int* oSize) {
 			writeLog("InternetOpenA", t2);
 			throw error;
 		}
+	}
+	{
+		int t = 90;
+		InternetSetOption(hInternet, INTERNET_OPTION_MAX_CONNS_PER_SERVER, &t, 4);
 	}
 	DWORD d = 0;
 	HINTERNET hConnect;

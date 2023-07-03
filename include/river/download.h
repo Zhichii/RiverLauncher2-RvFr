@@ -70,15 +70,16 @@ int download(HWND win, HWND btn) {
 		int size;
 		for (int i = 0; i < tempValue["libraries"].size(); i++) {
 			try {
-				char* tempChars;
 				if (tempValue["libraries"][i]["downloads"].isMember("artifact")) {
 					strcpyf(tmpS2, "%s\\libraries\\%s", tmpS3, tempValue["libraries"][i]["downloads"]["artifact"]["path"].asCString());
 					for (int j = 0; j < 512; j++) {
 						if (tmpS2[j] == '/') tmpS2[j] = '\\';
 					}
-					int size;
-					winGetHttps(&tempChars, tempValue["libraries"][i]["downloads"]["artifact"]["url"].asCString(), &size);
+					Response resp = Get(tempValue["libraries"][i]["downloads"]["artifact"]["url"].asCString());;
 					MakeSureDirectoryPathExists(tmpS2);
+					FILE* fp = fopen(tmpS2, "wb");
+					fwrite(resp.GetBinary(), 1, resp.size(), fp);
+					fclose(fp);
 				}
 				if (tempValue["libraries"][i]["downloads"].isMember("classifiers") &&
 					tempValue["libraries"][i]["downloads"]["classifiers"].isMember("natives-windows")) {
@@ -86,13 +87,12 @@ int download(HWND win, HWND btn) {
 					for (int j = 0; j < 512; j++) {
 						if (tmpS2[j] == '/') tmpS2[j] = '\\';
 					}
-					winGetHttps(&tempChars, tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["url"].asCString(), &size);
+					Response resp = Get(tempValue["libraries"][i]["downloads"]["classifiers"]["natives-windows"]["url"].asCString());;
 					MakeSureDirectoryPathExists(tmpS2);
+					FILE* fp = fopen(tmpS2, "wb");
+					fwrite(resp.GetBinary(), 1, resp.size(), fp);
+					fclose(fp);
 				}
-				FILE* fp = fopen(tmpS2, "wb");
-				fwrite(tempChars, 1, size, fp);
-				fclose(fp);
-				free(tempChars);
 			}
 			catch (const char* msg) {
 				DebugBreak();

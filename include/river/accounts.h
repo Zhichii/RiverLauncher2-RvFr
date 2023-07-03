@@ -43,6 +43,7 @@ int addOfflineAcc(HWND win, HWND btn);
 int addAcc(HWND win, HWND btn) {
 	thread thr([=]()->int {
 		RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+		dialog->setFont(hFont);
 		new RvG::Label(doTranslate("type.accounts.ask"), 10, 10, 512, 20, dialog);
 		RvG::Button* btnDialogOfficial = new RvG::Button(doTranslate("do.accounts.add.mojang"), 410, 157, 100, 40, dialog);
 		RvG::Button* btnDialogOffline = new RvG::Button(doTranslate("do.accounts.add.legacy"), 516, 157, 100, 40, dialog);
@@ -340,11 +341,10 @@ int addOfflineAcc(HWND win, HWND btn) {
 int remAcc(HWND win, HWND btn) {
 	thread thr([]() {
 		RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+		dialog->setFont(hFont);
 		char temp[256] = {};
-		wchar_t t2[256] = {};
 		sprintf(temp, doTranslate("prompt.accounts.remove"), accounts[intAccountsSel]["userName"].asCString());
-		MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, temp, strlen(temp), t2, 256);
-		new RvG::Label(t2, 10, 10, 512, 20, dialog);
+		new RvG::Label(temp, 10, 10, 512, 20, dialog);
 		RvG::Button* btnDialogOK = new RvG::Button(doTranslate("sel.yes"), 516, 157, 100, 40, dialog);
 		RvG::Button* btnDialogCan = new RvG::Button(doTranslate("sel.no"), 622, 157, 100, 40, dialog);
 		btnDialogCan->bindCommand([](HWND win, HWND btn) {

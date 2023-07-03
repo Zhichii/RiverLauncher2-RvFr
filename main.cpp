@@ -11,7 +11,6 @@ int btn1_i = 0;
 
 int main() {
 
-
 	RVG_START;
 	initData();
 	mkdir("RvL");
@@ -39,11 +38,22 @@ int main() {
 	FreeResource(IDR);
 
 
+	hRsrc = FindResource(NULL, MAKEINTRESOURCE(IDR_FONT1), L"font");
+	IDR = LoadResource(NULL, hRsrc);
+	size = SizeofResource(NULL, hRsrc);
+	DWORD nfi;
+	hFontHandle = AddFontMemResourceEx(LockResource(IDR), size, 0, &nfi);
+	hFont = CreateFontA(14, 0, 0, 0, FW_REGULAR, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, "Unifont");
+	FreeResource(IDR);
+
+
 	// Set-up Pages
 
 	x = new RvG::Window("name.launcher", 0);
+	x->setFont(hFont);
 	x->setTranslate("name.launcher", RvG::lang);
 	x->onClose([](HWND win, HWND btn) -> int {
+		DeleteObject(hFont);
 		CloseHandle(hWrite);
 		CloseHandle(hRead);
 		CloseHandle(pi.hThread);
@@ -149,6 +159,7 @@ int main() {
 			int ind = lisMinecraftVersion->getSelIndex();
 			if (ind == -1) return 0;
 			RvG::Window* dialog = new RvG::Window(doTranslate("dialog"), 1, CW_USEDEFAULT, CW_USEDEFAULT, 750, 250);
+			dialog->setFont(hFont);
 			char temp[256] = {};
 			char t2[256];
 			lisMinecraftVersion->getText(ind, t2);

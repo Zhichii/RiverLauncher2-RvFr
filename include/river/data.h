@@ -48,7 +48,7 @@ int initData() {
 
 	Json::Value temp = Json::objectValue;
 	temp["id"] = "zh_cn";
-	temp["name"] = "ç®€ä½“ä¸­æ–‡";
+	temp["name"] = "¼òÌåÖÐÎÄ";
 	temp["num"] = IDR_LANG_CHINESE;
 	langs.append(temp);
 	temp["id"] = "en_us";

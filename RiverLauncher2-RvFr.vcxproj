@@ -156,8 +156,6 @@
     <ClInclude Include="include\river\javaDownload.h" />
     <ClInclude Include="include\river\launch.h" />
     <ClInclude Include="include\river\ui.h" />
-    <ClInclude Include="include\rvtools\header.h" />
-    <ClInclude Include="include\rvtools\str.h" />
     <ClInclude Include="include\zip\unzip.h" />
     <ClInclude Include="include\zip\zip.h" />
     <ClInclude Include="resource.h" />
@@ -176,8 +174,14 @@
     <None Include="getJavaMainVersion.class" />
     <None Include="lang3.bin" />
     <None Include="lang\.json" />
+    <None Include="lang\chinese.json" />
+    <None Include="lang\english.json" />
     <None Include="lang\en_us.json" />
+    <None Include="lang\none.json" />
     <None Include="lang\zh_cn.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="lang\unifont-15.0.03.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
